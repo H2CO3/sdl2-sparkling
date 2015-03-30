@@ -1,0 +1,9 @@
+all:
+	clang -c -std=c99 -pedantic -Wall -o sdl2_sparkling.o -DUSE_DYNAMIC_LOADING sdl2_sparkling.c -O0 -g
+	clang++ -c -std=c++11 -pedantic -Wall -o ttf_support.o ttf_support.cpp -O0 -g
+	clang++ -dynamiclib -L/usr/local/Cellar/sdl2_gfx/1.0.0/lib/ -lsdl2_gfx -lsdl2_ttf -lspn $(shell sdl2-config --cflags --libs) -O0 -g -o sdl2_spn.dylib sdl2_sparkling.o ttf_support.o
+
+
+clean:
+	rm -f sdl2_spn.dylib
+	rm *.o

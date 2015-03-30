@@ -1,0 +1,40 @@
+# a Doctor's Signature Generator using
+# random Bezier curves, SDL and Sparkling
+
+let SDL = dynld("sdl2_spn");
+
+let w = SDL::OpenWindow("Doctor's Signature Generator", 640, 480);
+
+# Change this as appropriate (e. g. to 2.0) on high-DPI/Retina displays!
+let scale = 1.0;
+
+let randomCoords = fn -> range(20).map(
+	fn -> [ random() * w.width * scale, random() * w.height * scale]
+).reduce([], fn a b -> a.concat(b));
+
+let drawBezier = fn (window) {
+	# Clear screen
+	window.setColor(0, 0, 0, 1);
+	window.clear();
+
+	# Actually draw Bezier curve, 10 interpolation steps per point
+	let coords = randomCoords();
+	let arguments = [window, 10].concat(coords);
+	window.setColor(0.5, 0.25, 1, 1);
+	SDL::Window::bezier.call(arguments);
+
+	window.refresh();
+};
+
+let timer = SDL::StartTimer(0.5);
+
+while true {
+	var event;
+	while (event = SDL::PollEvent()) != nil {
+		if event["type"] == "timer" {
+			drawBezier(w);
+		} else if event["type"] == "quit" {
+			return;
+		}
+	}
+}

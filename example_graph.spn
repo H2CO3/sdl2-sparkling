@@ -1,0 +1,104 @@
+# A primitive function grapher
+
+
+# Parse the argument as a Sparkling expression
+let equation = $[1];
+let return_expr_stmt = parseexpr(equation)["children"][0];
+
+# Give it some context so that user can type 'x' instead of '$[0]'
+let ast = {
+	"type": "program",
+	"line": 0, "column": 0,
+	"children": [
+		{
+			"line": 0, "column": 0,
+			"type": "vardecl",
+			"children": [
+				{
+					"line": 0, "column": 0,
+					"type": "variable",
+					"name": "x",
+					"init": {
+						"line": 0, "column": 0,
+						"type": "subscript",
+						"object": {
+							"line": 0, "column": 0,
+							"type": "argv"
+						},
+						"index": {
+							"line": 0, "column": 0,
+							"type": "literal",
+							"value": 0
+						}
+					}
+				}
+			]
+		},
+		return_expr_stmt
+	]
+};
+
+# Compile it down to bytecode
+let f = compileast(ast);
+
+# Create canvas...
+let SDL = dynld("sdl2_spn");
+# ...in full-screen mode!
+let w = SDL::OpenWindow("Function Grapher");
+
+# adjust for high-DPI screens
+let scale = 2.0;
+
+let graphFunction = fn (x1, x2, y1, y2) {
+	w.setColor(0, 0, 0, 1);
+	w.clear();
+
+	var jprev = (1 - (f(x1) - y1) / (y2 - y1)) * w.height * scale;
+
+	for (var i = 1; i <= w.width * scale; i++) {
+		let lambda = i / (w.width * scale);
+		let x = lambda * (x2 - x1) + x1;
+		let j = (1 - (f(x) - y1) / (y2 - y1)) * w.height * scale;
+
+		w.setColor(1 - lambda, 0.5, lambda, 1);
+		w.line(i - 1, jprev, 1, j - jprev);
+
+		jprev = j;
+	}
+
+	// render equation text in the middle of the window
+	let text = "y = %s".format(equation);
+	let size = w.textSize(text);
+	w.renderText(
+		w.width / 2 * scale - size.width / 2,
+		w.height / 2 * scale - size.height / 2,
+		text,
+		true
+	);
+
+	w.refresh();
+};
+
+var x1 = -M_PI, x2 = +M_PI, y1 = -1.0, y2 = +1.0;
+
+w.setFont("LiberationSerif-Italic", 72 * scale, "normal");
+
+while true {
+	graphFunction(x1, x2, y1, y2);
+
+	var event;
+	while (event = SDL::PollEvent()) != nil {
+		if event.type == "quit" {
+			return;
+		}
+
+		if event.type == "gesture" {
+			// multi-touch gesture; zoom in/out
+			let ratio = 1 + event.distance;
+			x1 /= ratio;
+			x2 /= ratio;
+			y1 /= ratio;
+			y2 /= ratio;
+		}
+	}
+}
