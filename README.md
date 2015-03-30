@@ -10,24 +10,26 @@
 4. Handle events
 5. goto 3
 
+<!-- commity-comment -->
+
     // 1.
     let SDL = dynld("sdl2_spn");
-
+    
     // 2.
     let window = SDL::OpenWindow("Title", optionalWidth, optionalHeight);
-
+    
     while true {
         // 3.
         window.fillRect(0, 0, window.width, window.height);
         window.refresh();
-
+        
         // 4.
         var event;
         while (event = SDL::PollEvent()) != nil {
             // do something with 'event' here...
         }
-
-    // 5.
+        
+        // 5.
     }
 
 ### Functions

@@ -47,7 +47,7 @@ let SDL = dynld("sdl2_spn");
 let w = SDL::OpenWindow("Function Grapher");
 
 # adjust for high-DPI screens
-let scale = 2.0;
+let scale = 1.0;
 
 let graphFunction = fn (x1, x2, y1, y2) {
 	w.setColor(0, 0, 0, 1);
