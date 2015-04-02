@@ -218,6 +218,42 @@ static SpnValue flags_from_mouse_button(Uint32 mask)
 	return ret;
 }
 
+static SpnValue flags_from_window_event(Uint8 value)
+{
+	SpnValue ret = spn_makehashmap();
+	SpnHashMap *hm = spn_hashmapvalue(&ret);
+
+	struct {
+		const char *name;
+		int flag;
+	} flags[] = {
+		{ "shown",        value == SDL_WINDOWEVENT_SHOWN        },
+		{ "hidden",       value == SDL_WINDOWEVENT_HIDDEN       },
+		{ "exposed",      value == SDL_WINDOWEVENT_EXPOSED      },
+		{ "moved",        value == SDL_WINDOWEVENT_MOVED        },
+		{ "resized",      value == SDL_WINDOWEVENT_RESIZED      },
+		{ "size_changed", value == SDL_WINDOWEVENT_SIZE_CHANGED },
+		{ "minimized",    value == SDL_WINDOWEVENT_MINIMIZED    },
+		{ "maximized",    value == SDL_WINDOWEVENT_MAXIMIZED    },
+		{ "restored",     value == SDL_WINDOWEVENT_RESTORED     },
+		{ "enter",        value == SDL_WINDOWEVENT_ENTER        },
+		{ "leave",        value == SDL_WINDOWEVENT_LEAVE        },
+		{ "focus_gained", value == SDL_WINDOWEVENT_FOCUS_GAINED },
+		{ "focus_lost",   value == SDL_WINDOWEVENT_FOCUS_LOST   },
+		{ "close",        value == SDL_WINDOWEVENT_CLOSE        }
+	};
+
+	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
+		spn_hashmap_set_strkey(
+			hm,
+			flags[i].name,
+			&(SpnValue){ .type = SPN_TYPE_BOOL, .v.b = !!flags[i].flag }
+		);
+	}
+
+	return ret;
+}
+
 // Converts an SDL_Event structure to an SpnHashMap object
 static SpnValue event_to_hashmap(SDL_Event *event)
 {
@@ -325,6 +361,19 @@ static SpnValue event_to_hashmap(SDL_Event *event)
 		SpnValue timer = spn_makestrguserinfo(event->user.data1);
 		spn_hashmap_set_strkey(hm, "ID", &timer);
 		// do _not_ release 'timer' - we do not own it
+		break;
+	}
+	case SDL_WINDOWEVENT: {
+		type = "window";
+		set_integer_property(hm, "ID", event->window.windowID);
+
+		// set SDL_WindowEventID (SHOWN, HIDDEN, EXPOSED, etc)
+		SpnValue flags = flags_from_window_event(event->window.event);
+		spn_hashmap_set_strkey(hm, "window", &flags);
+
+		// set event dependent data
+		set_integer_property(hm, "data1", event->window.data1);
+		set_integer_property(hm, "data2", event->window.data2);
 		break;
 	}
 	default:
