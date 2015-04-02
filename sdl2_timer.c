@@ -98,7 +98,7 @@ int spnlib_SDL_StopTimer(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	CHECK_ARG_RETURN_ON_ERROR(0, strguserinfo);
 	spn_SDL_Timer *timer = OBJARG(0);
 
-	if (timer->base.isa->UID != SPN_SDL_CLASS_UID_TIMER) {
+	if (!spn_object_member_of_class(timer, &spn_SDL_Timer_class)) {
 		spn_ctx_runtime_error(ctx, "argument is not a timer object", NULL);
 		return -1;
 	}

@@ -131,10 +131,8 @@ SPN_API TTF_Font *spnlib_sdl2_get_font(
 	return font;
 }
 
-void spnlib_sdl2_render_text(
+spn_SDL_Texture *spnlib_sdl2_render_text(
 	SDL_Renderer *renderer,
-	int x,
-	int y,
 	const char *text,
 	TTF_Font *font,
 	bool hq
@@ -149,16 +147,6 @@ void spnlib_sdl2_render_text(
 	SDL_GetRenderDrawColor(renderer, &color.r, &color.g, &color.b, &color.a);
 
 	// Render text to surface, convert to texture
-	SDL_Surface *surf = renderers[hq](font, text, color);
-	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surf);
-	SDL_FreeSurface(surf);
-
-	// render the texture at specified coordinates
-	int width, height;
-	SDL_QueryTexture(texture, NULL, NULL, &width, &height);
-	SDL_Rect rect { x, y, width, height };
-	SDL_RenderCopy(renderer, texture, NULL, &rect);
-
-	// Clean up
-	SDL_DestroyTexture(texture);
+	SDL_Surface *surface = renderers[hq](font, text, color);
+	return spnlib_SDL_texture_new_surface(renderer, surface);
 }

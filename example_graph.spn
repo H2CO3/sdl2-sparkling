@@ -69,11 +69,11 @@ let graphFunction = fn (x1, x2, y1, y2) {
 	// render equation text in the middle of the window
 	let text = "y = %s".format(equation);
 	let size = w.textSize(text);
-	w.renderText(
+	let texture = w.renderText(text, true);
+	w.renderTexture(
+		texture,
 		w.width / 2 * scale - size.width / 2,
-		w.height / 2 * scale - size.height / 2,
-		text,
-		true
+		w.height / 2 * scale - size.height / 2
 	);
 
 	w.refresh();

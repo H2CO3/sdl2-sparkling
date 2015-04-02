@@ -203,11 +203,13 @@ Draws a line starting at point (x, y), moving along the vector (dx, dy).
 
 Draw a single pixel at point (x, y)
 
-    renderText(x, y, text, hq)
+    renderText(text, hq)
 
-Renders the string `text` starting at point (x, y) using the current
-drawing color and current font. if `hq` is true, the rendering will
-be higher-quality but slower than if it was `false`.
+Renders the string `text` using the current drawing color and current
+font. if `hq` is `true`, the rendering will be higher-quality but slower
+than if it was `false`. Returns the texture with the rendered text.
+(this function does not actually do drawing -- in order to blit the
+resulting texture to the window, use `renderTexture()`.)
 
     textSize(text)
 
@@ -215,3 +217,13 @@ Returns a hasmap with keys `width` and `height` which are integers
 specifying the size of the given `text` rendered using the current
 font. (No actual rendering is done, only the computation of the
 font size is carried out using kerning.)
+
+    renderTexture(texture, x, y)
+
+Blits the contents of `texture` at point `(x, y)` to the window.
+
+    loadImage(filename)
+
+Loads the file at `filename` into memory. Returns the
+resulting texture object on success and `nil` on error.
+

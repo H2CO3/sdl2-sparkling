@@ -23,6 +23,9 @@
 #include "sdl2_ttf.h"
 #include "sdl2_event.h"
 #include "sdl2_timer.h"
+#include "sdl2_texture.h"
+#include "sdl2_image.h"
+
 
 /////////////////////////////////
 // The returned library object //
@@ -139,7 +142,7 @@ spn_SDL_Window *window_from_hashmap(SpnHashMap *hm)
 
 	spn_SDL_Window *window = spn_objvalue(&objv);
 
-	if (window->base.isa->UID != SPN_SDL_CLASS_UID_WINDOW) {
+	if (!spn_object_member_of_class(window, &spn_SDL_Window_class)) {
 		return NULL;
 	}
 
@@ -681,14 +684,13 @@ static int spnlib_SDL_Window_point(SpnValue *ret, int argc, SpnValue *argv, void
 	return 0;
 }
 
-// Draw 'text' starting at point (x, y) with the current font.
+// Draw 'text' with the current font,
+// return a texture containing the result.
 static int spnlib_SDL_Window_renderText(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
-	CHECK_ARG_RETURN_ON_ERROR(1, number); // x
-	CHECK_ARG_RETURN_ON_ERROR(2, number); // y
-	CHECK_ARG_RETURN_ON_ERROR(3, string); // text
-	CHECK_ARG_RETURN_ON_ERROR(4, bool);   // rendering is high-quality?
+	CHECK_ARG_RETURN_ON_ERROR(1, string); // text
+	CHECK_ARG_RETURN_ON_ERROR(2, bool);   // rendering is high-quality?
 
 	SpnHashMap *hm = HASHMAPARG(0);
 	spn_SDL_Window *window = window_from_hashmap(hm);
@@ -700,20 +702,17 @@ static int spnlib_SDL_Window_renderText(SpnValue *ret, int argc, SpnValue *argv,
 
 	SDL_Renderer *renderer = window->renderer;
 
-	double x = NUMARG(1);
-	double y = NUMARG(2);
-	const char *text = STRARG(3);
-	bool hq = BOOLARG(4);
+	const char *text = STRARG(1);
+	bool hq = BOOLARG(2);
 
-	spnlib_sdl2_render_text(
+	spn_SDL_Texture *texture = spnlib_sdl2_render_text(
 		renderer,
-		x,
-		y,
 		text,
 		window->font,
 		hq
 	);
 
+	*ret = spn_makestrguserinfo(texture);
 	return 0;
 }
 
@@ -746,6 +745,78 @@ static int spnlib_SDL_Window_textSize(SpnValue *ret, int argc, SpnValue *argv, v
 
 	spn_hashmap_set_strkey(size, "width", &width);
 	spn_hashmap_set_strkey(size, "height", &height);
+
+	return 0;
+}
+
+// Render texture in the given window
+// Parameters:
+// 0. the window object
+// 1. the texture to render
+// 2. X coordinate of the point to render at
+// 3. Y coordinate of the point to render at
+static int spnlib_SDL_Window_renderTexture(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_ARG_RETURN_ON_ERROR(1, strguserinfo);
+	CHECK_ARG_RETURN_ON_ERROR(2, number);
+	CHECK_ARG_RETURN_ON_ERROR(3, number);
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	spn_SDL_Texture *texture = OBJARG(1);
+	if (!spn_object_member_of_class(texture, &spn_SDL_Texture_class)) {
+		spn_ctx_runtime_error(ctx, "2nd argument is not a valid texture", NULL);
+		return -2;
+	}
+
+	int x = NUMARG(2);
+	int y = NUMARG(3);
+
+	int w, h;
+	SDL_QueryTexture(texture->texture, NULL, NULL, &w, &h);
+
+	SDL_RenderCopy(
+		window->renderer,
+		texture->texture,
+		NULL,
+		&(SDL_Rect){ x, y, w, h }
+	);
+
+	return 0;
+}
+
+// Parses an image file and loads it into a texture object.
+// Parameters:
+// 0. the window object
+// 1. the filename as a string
+static int spnlib_SDL_Window_loadImage(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_ARG_RETURN_ON_ERROR(1, string);
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	const char *filename = STRARG(1);
+	spn_SDL_Texture *texture = spnlib_sdl2_load_image(window->renderer, filename);
+
+	// return the loaded image if loading succeeded.
+	// otherwise, implicitly return nil.
+	if (texture) {
+		*ret = spn_makestrguserinfo(texture);
+	}
 
 	return 0;
 }
@@ -799,7 +870,9 @@ static void spn_SDL_construct_library(void)
 		{ "line",              spnlib_SDL_Window_line              },
 		{ "point",             spnlib_SDL_Window_point             },
 		{ "renderText",        spnlib_SDL_Window_renderText        },
-		{ "textSize",          spnlib_SDL_Window_textSize          }
+		{ "textSize",          spnlib_SDL_Window_textSize          },
+		{ "renderTexture",     spnlib_SDL_Window_renderTexture     },
+		{ "loadImage",         spnlib_SDL_Window_loadImage         }
 	};
 
 	for (size_t i = 0; i < sizeof window_methods / sizeof window_methods[0]; i++) {
