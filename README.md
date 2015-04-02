@@ -38,8 +38,9 @@
 
 Opens a new window that you can draw on, returns the representing
 window object. If width and height are omitted, window is opened
-in fullscreen mode; width and height properties of window object
-will reflect resolution of screen.
+in fullscreen mode; `width` and `height` properties of window object
+will reflect resolution of screen. The `ID` property of the window
+object is an integer ID used throughout the event system.
 
     PollEvent()
 
@@ -55,6 +56,14 @@ properties are also available:
  - if type is `timer`, then `ID` will contain the timer object that
    generated the event.
  - if type is `quit`, then there are no additional properties.
+ - if type is `window`, then:
+   - `ID` is the integer window ID of the window that generated the event
+   - `name` is the event name as a string, e. g. `focus_gained`,
+     `focus_lost`, `resized`, etc.
+   - `data1` and `data2` are two integers. Their semantics is dependent
+      on the event name; see
+      [the documentation of SDL_WindowEventID](https://wiki.libsdl.org/SDL_WindowEventID)
+      for more info.
  - if type is `keyboard`, then:
    - `value` is a string describing the key that sent the event
    - `state` is `true` if the key was pressed, `false` if it was released
@@ -186,7 +195,7 @@ Draws a Bezier curve through the specified points, using `steps` steps
 to interpolate between two consecutive points. `steps` must be at least
 2, the number of points must be at least 3.
 
-   line(x, y, dx, dy)
+    line(x, y, dx, dy)
 
 Draws a line starting at point (x, y), moving along the vector (dx, dy).
 

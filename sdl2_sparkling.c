@@ -63,7 +63,7 @@ static const SpnClass spn_SDL_Window_class = {
 
 
 // Helper for OpenWindow
-static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height)
+static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height, Uint32 *ID)
 {
 	SDL_WindowFlags windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 
@@ -91,6 +91,7 @@ static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height)
 		SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 	);
 
+	*ID = SDL_GetWindowID(obj->window);
 	return spn_makestrguserinfo(obj);
 }
 
@@ -114,12 +115,14 @@ static int spn_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx
 		height = NUMARG(2);
 	}
 
-	SpnValue window = spn_SDL_Window_new(STRARG(0), &width, &height);
+	Uint32 ID;
+	SpnValue window = spn_SDL_Window_new(STRARG(0), &width, &height, &ID);
 
 	// set its properties
 	spn_hashmap_set_strkey(hm, "window", &window);
 	spn_hashmap_set_strkey(hm, "width",  &(SpnValue){ .type = SPN_TYPE_INT, .v.i = width  });
 	spn_hashmap_set_strkey(hm, "height", &(SpnValue){ .type = SPN_TYPE_INT, .v.i = height });
+	spn_hashmap_set_strkey(hm, "ID",     &(SpnValue){ .type = SPN_TYPE_INT, .v.i = ID     });
 
 	// handle ownership
 	spn_value_release(&window);
@@ -191,6 +194,13 @@ static void set_float_property(SpnHashMap *hm, const char *name, double x)
 	spn_hashmap_set_strkey(hm, name, &val);
 }
 
+static void set_string_property_nocopy(SpnHashMap *hm, const char *name, const char *str)
+{
+	SpnValue val = spn_makestring_nocopy(str);
+	spn_hashmap_set_strkey(hm, name, &val);
+	spn_value_release(&val);
+}
+
 static SpnValue flags_from_mouse_button(Uint32 mask)
 {
 	SpnValue ret = spn_makehashmap();
@@ -218,40 +228,25 @@ static SpnValue flags_from_mouse_button(Uint32 mask)
 	return ret;
 }
 
-static SpnValue flags_from_window_event(Uint8 value)
+static const char *get_window_event_name(SDL_WindowEventID value)
 {
-	SpnValue ret = spn_makehashmap();
-	SpnHashMap *hm = spn_hashmapvalue(&ret);
-
-	struct {
-		const char *name;
-		int flag;
-	} flags[] = {
-		{ "shown",        value == SDL_WINDOWEVENT_SHOWN        },
-		{ "hidden",       value == SDL_WINDOWEVENT_HIDDEN       },
-		{ "exposed",      value == SDL_WINDOWEVENT_EXPOSED      },
-		{ "moved",        value == SDL_WINDOWEVENT_MOVED        },
-		{ "resized",      value == SDL_WINDOWEVENT_RESIZED      },
-		{ "size_changed", value == SDL_WINDOWEVENT_SIZE_CHANGED },
-		{ "minimized",    value == SDL_WINDOWEVENT_MINIMIZED    },
-		{ "maximized",    value == SDL_WINDOWEVENT_MAXIMIZED    },
-		{ "restored",     value == SDL_WINDOWEVENT_RESTORED     },
-		{ "enter",        value == SDL_WINDOWEVENT_ENTER        },
-		{ "leave",        value == SDL_WINDOWEVENT_LEAVE        },
-		{ "focus_gained", value == SDL_WINDOWEVENT_FOCUS_GAINED },
-		{ "focus_lost",   value == SDL_WINDOWEVENT_FOCUS_LOST   },
-		{ "close",        value == SDL_WINDOWEVENT_CLOSE        }
-	};
-
-	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
-		spn_hashmap_set_strkey(
-			hm,
-			flags[i].name,
-			&(SpnValue){ .type = SPN_TYPE_BOOL, .v.b = !!flags[i].flag }
-		);
+	switch (value) {
+	case SDL_WINDOWEVENT_SHOWN:        return "shown";
+	case SDL_WINDOWEVENT_HIDDEN:       return "hidden";
+	case SDL_WINDOWEVENT_EXPOSED:      return "exposed";
+	case SDL_WINDOWEVENT_MOVED:        return "moved";
+	case SDL_WINDOWEVENT_RESIZED:      return "resized";
+	case SDL_WINDOWEVENT_SIZE_CHANGED: return "size_changed";
+	case SDL_WINDOWEVENT_MINIMIZED:    return "minimized";
+	case SDL_WINDOWEVENT_MAXIMIZED:    return "maximized";
+	case SDL_WINDOWEVENT_RESTORED:     return "restored";
+	case SDL_WINDOWEVENT_ENTER:        return "enter";
+	case SDL_WINDOWEVENT_LEAVE:        return "leave";
+	case SDL_WINDOWEVENT_FOCUS_GAINED: return "focus_gained";
+	case SDL_WINDOWEVENT_FOCUS_LOST:   return "focus_lost";
+	case SDL_WINDOWEVENT_CLOSE:        return "close";
+	default: return NULL;
 	}
-
-	return ret;
 }
 
 // Converts an SDL_Event structure to an SpnHashMap object
@@ -283,9 +278,8 @@ static SpnValue event_to_hashmap(SDL_Event *event)
 	case SDL_MOUSEBUTTONUP: {
 		type = "mousebutton";
 
-		SpnValue btnname = spn_makestring_nocopy(get_mouse_button_name(event->button.button));
-		spn_hashmap_set_strkey(hm, "button", &btnname);
-		spn_value_release(&btnname);
+		const char *btnname = get_mouse_button_name(event->button.button);
+		set_string_property_nocopy(hm, "button", btnname);
 
 		SpnValue state = spn_makebool(event->button.state == SDL_PRESSED);
 		spn_hashmap_set_strkey(hm, "state", &state);
@@ -367,9 +361,9 @@ static SpnValue event_to_hashmap(SDL_Event *event)
 		type = "window";
 		set_integer_property(hm, "ID", event->window.windowID);
 
-		// set SDL_WindowEventID (SHOWN, HIDDEN, EXPOSED, etc)
-		SpnValue flags = flags_from_window_event(event->window.event);
-		spn_hashmap_set_strkey(hm, "window", &flags);
+		// set SDL_WindowEventID (SHOWN, HIDDEN, EXPOSED, etc.)
+		const char *name = get_window_event_name(event->window.event);
+		set_string_property_nocopy(hm, "name", name);
 
 		// set event dependent data
 		set_integer_property(hm, "data1", event->window.data1);
