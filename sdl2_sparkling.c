@@ -20,18 +20,14 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 
 #include "sdl2_sparkling.h"
-#include "ttf_support.h"
+#include "sdl2_ttf.h"
+#include "sdl2_event.h"
+#include "sdl2_timer.h"
 
 /////////////////////////////////
 // The returned library object //
 /////////////////////////////////
 static SpnHashMap *library = NULL;
-
-enum {
-	SPN_SDL_CLASS_UID_BASE = ('S' << 16) | ('D' << 8) | ('L' << 0),
-	SPN_SDL_CLASS_UID_WINDOW = SPN_USER_CLASS_UID_BASE + SPN_SDL_CLASS_UID_BASE + 1,
-	SPN_SDL_CLASS_UID_TIMER  = SPN_USER_CLASS_UID_BASE + SPN_SDL_CLASS_UID_BASE + 2
-};
 
 ////////////////////////////////////////
 //          The window class          //
@@ -96,7 +92,7 @@ static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height, U
 }
 
 // Constructor for window objects.
-static int spn_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, string);
 
@@ -130,377 +126,6 @@ static int spn_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx
 	return 0;
 }
 
-//
-// Helpers for 'event_to_hashmap()'
-//
-
-static SpnValue flags_from_modifier(SDL_Keymod mod)
-{
-	SpnValue ret = spn_makehashmap();
-	SpnHashMap *hm = spn_hashmapvalue(&ret);
-
-	struct {
-		const char *name;
-		int flag;
-	} flags[] = {
-		{ "lshift",   mod & KMOD_LSHIFT },
-		{ "rshift",   mod & KMOD_RSHIFT },
-		{ "shift",    mod & KMOD_SHIFT  }, // either of left or right shift
-		{ "lctrl",    mod & KMOD_LCTRL  },
-		{ "rctrl",    mod & KMOD_RCTRL  },
-		{ "ctrl",     mod & KMOD_CTRL   }, // either of left or right control
-		{ "lalt",     mod & KMOD_LALT   },
-		{ "ralt",     mod & KMOD_RALT   },
-		{ "alt",      mod & KMOD_ALT    }, // either of left or right alt
-		{ "lsuper",   mod & KMOD_LGUI   },
-		{ "rsuper",   mod & KMOD_RGUI   },
-		{ "super",    mod & KMOD_GUI    }, // either of left or right Windows/Command
-		{ "numlock",  mod & KMOD_NUM    },
-		{ "capslock", mod & KMOD_CAPS   }
-	};
-
-	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
-		spn_hashmap_set_strkey(
-			hm,
-			flags[i].name,
-			&(SpnValue){ .type = SPN_TYPE_BOOL, .v.b = !!flags[i].flag }
-		);
-	}
-
-	return ret;
-}
-
-static const char *get_mouse_button_name(Uint8 button)
-{
-	switch (button) {
-	case SDL_BUTTON_LEFT:   return "left";
-	case SDL_BUTTON_RIGHT:  return "right";
-	case SDL_BUTTON_MIDDLE: return "middle";
-	case SDL_BUTTON_X1:     return "X1";
-	case SDL_BUTTON_X2:     return "X2";
-	default:                return NULL;
-	}
-}
-
-static void set_integer_property(SpnHashMap *hm, const char *name, long n)
-{
-	SpnValue val = spn_makeint(n);
-	spn_hashmap_set_strkey(hm, name, &val);
-}
-
-static void set_float_property(SpnHashMap *hm, const char *name, double x)
-{
-	SpnValue val = spn_makefloat(x);
-	spn_hashmap_set_strkey(hm, name, &val);
-}
-
-static void set_string_property_nocopy(SpnHashMap *hm, const char *name, const char *str)
-{
-	SpnValue val = spn_makestring_nocopy(str);
-	spn_hashmap_set_strkey(hm, name, &val);
-	spn_value_release(&val);
-}
-
-static SpnValue flags_from_mouse_button(Uint32 mask)
-{
-	SpnValue ret = spn_makehashmap();
-	SpnHashMap *hm = spn_hashmapvalue(&ret);
-
-	struct {
-		const char *name;
-		int flag;
-	} flags[] = {
-		{ "left",   mask & SDL_BUTTON_LMASK  },
-		{ "right",  mask & SDL_BUTTON_RMASK  },
-		{ "middle", mask & SDL_BUTTON_MMASK  },
-		{ "X2",     mask & SDL_BUTTON_X1MASK },
-		{ "X2",     mask & SDL_BUTTON_X2MASK }
-	};
-
-	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
-		spn_hashmap_set_strkey(
-			hm,
-			flags[i].name,
-			&(SpnValue){ .type = SPN_TYPE_BOOL, .v.b = !!flags[i].flag }
-		);
-	}
-
-	return ret;
-}
-
-static const char *get_window_event_name(SDL_WindowEventID value)
-{
-	switch (value) {
-	case SDL_WINDOWEVENT_SHOWN:        return "shown";
-	case SDL_WINDOWEVENT_HIDDEN:       return "hidden";
-	case SDL_WINDOWEVENT_EXPOSED:      return "exposed";
-	case SDL_WINDOWEVENT_MOVED:        return "moved";
-	case SDL_WINDOWEVENT_RESIZED:      return "resized";
-	case SDL_WINDOWEVENT_SIZE_CHANGED: return "size_changed";
-	case SDL_WINDOWEVENT_MINIMIZED:    return "minimized";
-	case SDL_WINDOWEVENT_MAXIMIZED:    return "maximized";
-	case SDL_WINDOWEVENT_RESTORED:     return "restored";
-	case SDL_WINDOWEVENT_ENTER:        return "enter";
-	case SDL_WINDOWEVENT_LEAVE:        return "leave";
-	case SDL_WINDOWEVENT_FOCUS_GAINED: return "focus_gained";
-	case SDL_WINDOWEVENT_FOCUS_LOST:   return "focus_lost";
-	case SDL_WINDOWEVENT_CLOSE:        return "close";
-	default: return NULL;
-	}
-}
-
-// Converts an SDL_Event structure to an SpnHashMap object
-static SpnValue event_to_hashmap(SDL_Event *event)
-{
-	SpnValue ret = spn_makehashmap();
-	SpnHashMap *hm = spn_hashmapvalue(&ret);
-	const char *type = "";
-
-	switch (event->type) {
-	case SDL_KEYDOWN: // fallthru
-	case SDL_KEYUP: {
-		type = "keyboard";
-
-		SpnValue str = spn_makestring(SDL_GetKeyName(event->key.keysym.sym));
-		spn_hashmap_set_strkey(hm, "value", &str);
-		spn_value_release(&str);
-
-		SpnValue mod = flags_from_modifier(event->key.keysym.mod);
-		spn_hashmap_set_strkey(hm, "modifier", &mod);
-		spn_value_release(&mod);
-
-		SpnValue state = spn_makebool(event->key.state == SDL_PRESSED);
-		spn_hashmap_set_strkey(hm, "state", &state);
-
-		break;
-	}
-	case SDL_MOUSEBUTTONDOWN: // fallthru
-	case SDL_MOUSEBUTTONUP: {
-		type = "mousebutton";
-
-		const char *btnname = get_mouse_button_name(event->button.button);
-		set_string_property_nocopy(hm, "button", btnname);
-
-		SpnValue state = spn_makebool(event->button.state == SDL_PRESSED);
-		spn_hashmap_set_strkey(hm, "state", &state);
-
-		set_integer_property(hm, "count", event->button.clicks);
-		set_integer_property(hm, "x", event->button.x);
-		set_integer_property(hm, "y", event->button.y);
-
-		break;
-	}
-	case SDL_MOUSEMOTION: {
-		type = "mousemove";
-
-		set_integer_property(hm, "x", event->motion.x);
-		set_integer_property(hm, "y", event->motion.y);
-		set_integer_property(hm, "dx", event->motion.xrel);
-		set_integer_property(hm, "dy", event->motion.yrel);
-
-		SpnValue flags = flags_from_mouse_button(event->motion.state);
-		spn_hashmap_set_strkey(hm, "buttons", &flags);
-		spn_value_release(&flags);
-
-		break;
-	}
-	case SDL_MOUSEWHEEL:
-		type = "mousewheel";
-
-		set_integer_property(hm, "x", event->wheel.x);
-		set_integer_property(hm, "y", event->wheel.y);
-
-		break;
-	case SDL_FINGERDOWN:   // fallthru
-	case SDL_FINGERMOTION: // fallthru
-	case SDL_FINGERUP:
-		// first off, set type
-		switch (event->type) {
-		case SDL_FINGERDOWN:   type = "touchdown"; break;
-		case SDL_FINGERMOTION: type = "touchmove"; break;
-		case SDL_FINGERUP:     type = "touchup"; break;
-		}
-
-		// set geometrical properties
-		// Note that x, y, dx and dy are normalized
-		// to the [0...1] interval, unlike the similar properties
-		// of events of other types.
-		set_integer_property(hm, "finger", event->tfinger.fingerId);
-		set_float_property(hm, "x", event->tfinger.x);
-		set_float_property(hm, "y", event->tfinger.y);
-		set_float_property(hm, "dx", event->tfinger.dx);
-		set_float_property(hm, "dy", event->tfinger.dy);
-		set_float_property(hm, "pressure", event->tfinger.pressure);
-
-		break;
-	case SDL_MULTIGESTURE:
-		type = "gesture";
-
-		// set geometrical properties
-		set_integer_property(hm, "fingerCount", event->mgesture.numFingers);
-
-		// again, x, y and distance are normalized to [0...1],
-		// and rotation is measured in radians.
-		set_float_property(hm, "x", event->mgesture.x);
-		set_float_property(hm, "y", event->mgesture.y);
-		set_float_property(hm, "rotation", event->mgesture.dTheta);
-		set_float_property(hm, "distance", event->mgesture.dDist);
-
-		break;
-	case SDL_QUIT:
-		type = "quit";
-		break;
-	case SDL_USEREVENT: {
-		type = "timer";
-		SpnValue timer = spn_makestrguserinfo(event->user.data1);
-		spn_hashmap_set_strkey(hm, "ID", &timer);
-		// do _not_ release 'timer' - we do not own it
-		break;
-	}
-	case SDL_WINDOWEVENT: {
-		type = "window";
-		set_integer_property(hm, "ID", event->window.windowID);
-
-		// set SDL_WindowEventID (SHOWN, HIDDEN, EXPOSED, etc.)
-		const char *name = get_window_event_name(event->window.event);
-		set_string_property_nocopy(hm, "name", name);
-
-		// set event dependent data
-		set_integer_property(hm, "data1", event->window.data1);
-		set_integer_property(hm, "data2", event->window.data2);
-		break;
-	}
-	default:
-		break;
-	}
-
-	// set type string and timestamp
-	SpnValue typestr = spn_makestring_nocopy(type);
-	spn_hashmap_set_strkey(hm, "type", &typestr);
-	spn_value_release(&typestr);
-
-	set_integer_property(hm, "timestamp", event->common.timestamp);
-
-	return ret;
-}
-
-// Returns the next available event or
-// nil if there's no event to process
-// Typically called in a loop.
-static int spn_SDL_PollEvent(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
-{
-	SDL_Event event;
-	if (SDL_PollEvent(&event)) {
-		*ret = event_to_hashmap(&event);
-	}
-
-	// if there's no event to poll, return nil implicitly
-	return 0;
-}
-
-///////////////////////////////////
-//////////    Timers    ///////////
-///////////////////////////////////
-
-typedef struct spn_SDL_Timer {
-	SpnObject base;
-	SDL_TimerID ID;
-	SpnContext *ctx;
-	SpnFunction *callback;
-} spn_SDL_Timer;
-
-// If a timer object goes out of scope, stop it
-static void spn_SDL_Timer_dtor(void *obj)
-{
-	spn_SDL_Timer *timer = obj;
-
-	if (timer->ID) {
-		SDL_RemoveTimer(timer->ID);
-		timer->ID = 0;
-	}
-}
-
-static const SpnClass spn_SDL_Timer_class = {
-	sizeof(spn_SDL_Timer),
-	SPN_SDL_CLASS_UID_TIMER,
-	NULL,
-	NULL,
-	NULL,
-	spn_SDL_Timer_dtor
-};
-
-static Uint32 native_timer_callback(Uint32 delay, void *data)
-{
-	spn_SDL_Timer *timer = data;
-
-	// if the user supplied a callback function, call it
-	// otherwise, just generate a timer event
-	if (timer->callback) {
-		// XXX: TODO: how can we do error checking here...!?
-		spn_ctx_callfunc(timer->ctx, timer->callback, NULL, 0, NULL);
-	} else {
-		SDL_Event event;
-		SDL_zero(event);
-		event.type = SDL_USEREVENT;
-		event.user.data1 = timer;
-		SDL_PushEvent(&event);
-	}
-
-	return delay;
-}
-
-// Initiate a timer and return the corresponding descriptor object.
-// Times are recurring: you must explicitly stop them if you don't
-// want them to fire continuously.
-// Also, when a timer descriptr object is deallocated (goes out of
-// scope), its corresponding timer will be stopped automatically.
-// Consequently, in order to keep the timer alive, you need to
-// hold a reference to the returned timer descriptor (e. g. store
-// it in a variable or a data structure).
-// The first argument is the timeout in seconds (may be fractional),
-// the second argument is an optional callback function which will
-// be called in the current context. If omitted, the timer will
-// generate SDL_Events of type "timer" instead.
-static int spn_SDL_StartTimer(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
-{
-	CHECK_ARG_RETURN_ON_ERROR(0, number);
-
-	if (argc > 1) {
-		CHECK_ARG_RETURN_ON_ERROR(1, func);
-	}
-
-	double dt = NUMARG(0);
-	SpnFunction *callback = argc > 1 ? FUNCARG(1) : NULL;
-
-	spn_SDL_Timer *timer = spn_object_new(&spn_SDL_Timer_class);
-	SDL_TimerID timerID = SDL_AddTimer(dt * 1000, native_timer_callback, timer);
-
-	timer->ID = timerID;
-	timer->ctx = ctx;
-	timer->callback = callback;
-
-	*ret = spn_makestrguserinfo(timer);
-	return 0;
-}
-
-// Stop a timer object.
-static int spn_SDL_StopTimer(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
-{
-	CHECK_ARG_RETURN_ON_ERROR(0, strguserinfo);
-	spn_SDL_Timer *timer = OBJARG(0);
-
-	if (timer->base.isa->UID != SPN_SDL_CLASS_UID_TIMER) {
-		spn_ctx_runtime_error(ctx, "argument is not a timer object", NULL);
-		return -1;
-	}
-
-	if (timer->ID) {
-		SDL_RemoveTimer(timer->ID);
-		timer->ID = 0;
-	}
-
-	return 0;
-}
 
 // Retrieves an internal window descriptor from
 // a "public" window object
@@ -521,8 +146,12 @@ spn_SDL_Window *window_from_hashmap(SpnHashMap *hm)
 	return window;
 }
 
+/////////////////////////////////
+//     Graphics primitives     //
+/////////////////////////////////
+
 // Dump ye ole video buffer!
-static int spn_SDL_Window_refresh(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_refresh(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	SpnHashMap *hm = HASHMAPARG(0);
@@ -540,7 +169,7 @@ static int spn_SDL_Window_refresh(SpnValue *ret, int argc, SpnValue *argv, void 
 }
 
 // fill the entire window with the current drawing color
-static int spn_SDL_Window_clear(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_clear(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	SpnHashMap *hm = HASHMAPARG(0);
@@ -574,7 +203,7 @@ static double constrain_to_01(double x)
 // Set the drawing color in RGBA format.
 // Color components are expected to be floating-point values
 // in the [0...1] closed interval.
-static int spn_SDL_Window_setColor(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_setColor(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, number);
@@ -604,7 +233,7 @@ static int spn_SDL_Window_setColor(SpnValue *ret, int argc, SpnValue *argv, void
 
 // Returns a hashmap with keys "r", "g", "b", "a"
 // Values are floting-point numbers, normalized to [0...1]
-static int spn_SDL_Window_getColor(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_getColor(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 
@@ -643,7 +272,7 @@ static int spn_SDL_Window_getColor(SpnValue *ret, int argc, SpnValue *argv, void
 // 2. font size in points (72pt = 1 inch)
 // 3. font style string ("bold", "italic", "underline", "striketrough", "normal"
 //    or any space-spearated combination thereof.)
-static int spn_SDL_Window_setFont(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_setFont(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, string);
@@ -670,7 +299,7 @@ static int spn_SDL_Window_setFont(SpnValue *ret, int argc, SpnValue *argv, void 
 // Draw a rectangle with coordinates (x, y) and size (w, h).
 // if 'fill' is nonzero, fill it with the drawing color,
 // otherwise draw the contours only.
-static int spn_SDL_Window_drawRect(
+static int spnlib_SDL_Window_drawRect(
 	SpnValue *ret,
 	int argc,
 	SpnValue *argv,
@@ -703,21 +332,21 @@ static int spn_SDL_Window_drawRect(
 	return 0;
 }
 
-static int spn_SDL_Window_strokeRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_strokeRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawRect(ret, argc, argv, ctx, 0);
+	return spnlib_SDL_Window_drawRect(ret, argc, argv, ctx, 0);
 }
 
-static int spn_SDL_Window_fillRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_fillRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawRect(ret, argc, argv, ctx, 1);
+	return spnlib_SDL_Window_drawRect(ret, argc, argv, ctx, 1);
 }
 
 // Draw arc with center (x, y), radius r
 // 'start' and 'end' are the staring and ending angle of the
 // outline of the arc, measured in radians.
 // 'fill' means the same thing as above.
-static int spn_SDL_Window_drawArc(
+static int spnlib_SDL_Window_drawArc(
 	SpnValue *ret,
 	int argc,
 	SpnValue *argv,
@@ -776,19 +405,19 @@ static int spn_SDL_Window_drawArc(
 	return 0;
 }
 
-static int spn_SDL_Window_strokeArc(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_strokeArc(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawArc(ret, argc, argv, ctx, 0);
+	return spnlib_SDL_Window_drawArc(ret, argc, argv, ctx, 0);
 }
 
-static int spn_SDL_Window_fillArc(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_fillArc(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawArc(ret, argc, argv, ctx, 1);
+	return spnlib_SDL_Window_drawArc(ret, argc, argv, ctx, 1);
 }
 
 // Draw an ellipse with center (x, y) and
 // horizontal semi-axis rx, veritcal semi-axis ry
-static int spn_SDL_Window_drawEllipse(
+static int spnlib_SDL_Window_drawEllipse(
 	SpnValue *ret,
 	int argc,
 	SpnValue *argv,
@@ -830,19 +459,19 @@ static int spn_SDL_Window_drawEllipse(
 	return 0;
 }
 
-static int spn_SDL_Window_strokeEllipse(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_strokeEllipse(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawEllipse(ret, argc, argv, ctx, 0);
+	return spnlib_SDL_Window_drawEllipse(ret, argc, argv, ctx, 0);
 }
 
-static int spn_SDL_Window_fillEllipse(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_fillEllipse(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawEllipse(ret, argc, argv, ctx, 1);
+	return spnlib_SDL_Window_drawEllipse(ret, argc, argv, ctx, 1);
 }
 
 // Fill the polygon enclosed by the points (x1, y1), (x2, y2), (x3, y3), ...
 // At least 3 points must be specified.
-static int spn_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 
@@ -890,7 +519,7 @@ static int spn_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv, v
 
 // Stroke or fill rounded rectangle at point (x, y) of size (w, h)
 // with corner radius r
-static int spn_SDL_Window_drawRoundedRect(
+static int spnlib_SDL_Window_drawRoundedRect(
 	SpnValue *ret,
 	int argc,
 	SpnValue *argv,
@@ -934,21 +563,21 @@ static int spn_SDL_Window_drawRoundedRect(
 	return 0;
 }
 
-static int spn_SDL_Window_strokeRoundedRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_strokeRoundedRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawRoundedRect(ret, argc, argv, ctx, 0);
+	return spnlib_SDL_Window_drawRoundedRect(ret, argc, argv, ctx, 0);
 }
 
-static int spn_SDL_Window_fillRoundedRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_fillRoundedRect(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	return spn_SDL_Window_drawRoundedRect(ret, argc, argv, ctx, 1);
+	return spnlib_SDL_Window_drawRoundedRect(ret, argc, argv, ctx, 1);
 }
 
 // Join in s steps the points (x1, y1), (x2, y2), (x3, y3), ...
 // with a Bezier curve. 's', the number of steps determines how
 // fine the resolution of the curve is (i. e., how close it is to a
 // real curve - while it's just a line composed of straight segments)
-static int spn_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, int);
@@ -1003,7 +632,7 @@ static int spn_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, void *
 
 // Draw a straight 1px line between points (x, y) and (x + dx, y + dy)
 // using the current drawing color.
-static int spn_SDL_Window_line(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_line(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, number); // x
@@ -1031,7 +660,7 @@ static int spn_SDL_Window_line(SpnValue *ret, int argc, SpnValue *argv, void *ct
 }
 
 // Set the pixel at point (x, y) to the current drawing color.
-static int spn_SDL_Window_point(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_point(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, number); // x
@@ -1053,7 +682,7 @@ static int spn_SDL_Window_point(SpnValue *ret, int argc, SpnValue *argv, void *c
 }
 
 // Draw 'text' starting at point (x, y) with the current font.
-static int spn_SDL_Window_renderText(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_renderText(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, number); // x
@@ -1091,7 +720,7 @@ static int spn_SDL_Window_renderText(SpnValue *ret, int argc, SpnValue *argv, vo
 // parameters:
 // 0. the window object
 // 1. the text to render, as a string
-static int spn_SDL_Window_textSize(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static int spnlib_SDL_Window_textSize(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, string); // the text to render
@@ -1136,10 +765,10 @@ static void spn_SDL_construct_library(void)
 
 	// top-level library functions
 	static const SpnExtFunc fns[] = {
-		{ "OpenWindow",  spn_SDL_OpenWindow   },
-		{ "PollEvent",   spn_SDL_PollEvent    },
-		{ "StartTimer",  spn_SDL_StartTimer   },
-		{ "StopTimer",   spn_SDL_StopTimer    }
+		{ "OpenWindow",  spnlib_SDL_OpenWindow   },
+		{ "PollEvent",   spnlib_SDL_PollEvent    },
+		{ "StartTimer",  spnlib_SDL_StartTimer   },
+		{ "StopTimer",   spnlib_SDL_StopTimer    }
 	};
 
 	for (size_t i = 0; i < sizeof fns / sizeof fns[0]; i++) {
@@ -1152,25 +781,25 @@ static void spn_SDL_construct_library(void)
 	SpnHashMap *window = spn_hashmap_new();
 
 	static const SpnExtFunc window_methods[] = {
-		{ "refresh",           spn_SDL_Window_refresh           },
-		{ "setColor",          spn_SDL_Window_setColor          },
-		{ "getColor",          spn_SDL_Window_getColor          },
-		{ "setFont",           spn_SDL_Window_setFont           },
-		{ "clear",             spn_SDL_Window_clear             },
-		{ "strokeRect",        spn_SDL_Window_strokeRect        },
-		{ "fillRect",          spn_SDL_Window_fillRect          },
-		{ "strokeArc",         spn_SDL_Window_strokeArc         },
-		{ "fillArc",           spn_SDL_Window_fillArc           },
-		{ "strokeEllipse",     spn_SDL_Window_strokeEllipse     },
-		{ "fillEllipse",       spn_SDL_Window_fillEllipse       },
-		{ "fillPolygon",       spn_SDL_Window_fillPolygon       },
-		{ "strokeRoundedRect", spn_SDL_Window_strokeRoundedRect },
-		{ "fillRoundedRect",   spn_SDL_Window_fillRoundedRect   },
-		{ "bezier",            spn_SDL_Window_bezier            },
-		{ "line",              spn_SDL_Window_line              },
-		{ "point",             spn_SDL_Window_point             },
-		{ "renderText",        spn_SDL_Window_renderText        },
-		{ "textSize",          spn_SDL_Window_textSize          }
+		{ "refresh",           spnlib_SDL_Window_refresh           },
+		{ "setColor",          spnlib_SDL_Window_setColor          },
+		{ "getColor",          spnlib_SDL_Window_getColor          },
+		{ "setFont",           spnlib_SDL_Window_setFont           },
+		{ "clear",             spnlib_SDL_Window_clear             },
+		{ "strokeRect",        spnlib_SDL_Window_strokeRect        },
+		{ "fillRect",          spnlib_SDL_Window_fillRect          },
+		{ "strokeArc",         spnlib_SDL_Window_strokeArc         },
+		{ "fillArc",           spnlib_SDL_Window_fillArc           },
+		{ "strokeEllipse",     spnlib_SDL_Window_strokeEllipse     },
+		{ "fillEllipse",       spnlib_SDL_Window_fillEllipse       },
+		{ "fillPolygon",       spnlib_SDL_Window_fillPolygon       },
+		{ "strokeRoundedRect", spnlib_SDL_Window_strokeRoundedRect },
+		{ "fillRoundedRect",   spnlib_SDL_Window_fillRoundedRect   },
+		{ "bezier",            spnlib_SDL_Window_bezier            },
+		{ "line",              spnlib_SDL_Window_line              },
+		{ "point",             spnlib_SDL_Window_point             },
+		{ "renderText",        spnlib_SDL_Window_renderText        },
+		{ "textSize",          spnlib_SDL_Window_textSize          }
 	};
 
 	for (size_t i = 0; i < sizeof window_methods / sizeof window_methods[0]; i++) {

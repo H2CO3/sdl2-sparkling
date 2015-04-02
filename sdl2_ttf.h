@@ -1,5 +1,5 @@
 //
-// ttf_support.h
+// sdl2_ttf.h
 // sdl2-sparkling
 //
 // Created by Arpad Goretity
@@ -8,8 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-#ifndef SPNLIB_SDL2_TTF_SUPPORT_H
-#define SPNLIB_SDL2_TTF_SUPPORT_H
+#ifndef SPNLIB_SDL2_TTF_H
+#define SPNLIB_SDL2_TTF_H
 
 #include <spn/api.h>
 
@@ -31,4 +31,4 @@ SPN_API void spnlib_sdl2_render_text(
 	bool hq // false: fast, true: high-quality
 );
 
-#endif // SPNLIB_SDL2_TTF_SUPPORT_H
+#endif // SPNLIB_SDL2_TTF_H

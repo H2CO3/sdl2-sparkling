@@ -1,8 +1,32 @@
-all:
-	clang -c -std=c99 -pedantic -Wall -o sdl2_sparkling.o -DUSE_DYNAMIC_LOADING sdl2_sparkling.c -O3 -flto
-	clang++ -c -std=c++11 -pedantic -Wall -o ttf_support.o ttf_support.cpp -O3 -flto
-	clang++ -dynamiclib -L/usr/local/Cellar/sdl2_gfx/1.0.0/lib/ -lsdl2_gfx -lsdl2_ttf -lspn $(shell sdl2-config --cflags --libs) -O3 -flto -o sdl2_spn.dylib sdl2_sparkling.o ttf_support.o
+CC = clang
+CXX = clang++
+LD = $(CXX)
+
+CFLAGS = -std=c99 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING
+CXFLAGS = -std=c++11 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING
+LDFLAGS = -dynamiclib \
+          -L/usr/local/Cellar/sdl2_gfx/1.0.0/lib/ \
+          $(shell sdl2-config --cflags --libs) \
+          -O3 \
+          -flto \
+          -lspn \
+          -lsdl2_gfx \
+          -lsdl2_ttf
+
+TARGET = sdl2_spn.dylib
+OBJECTS  = $(patsubst %.c, %.o, $(wildcard *.c))
+OBJECTS += $(patsubst %.cpp, %.o, $(wildcard *.cpp))
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+%.o: %.cpp
+	$(CXX) $(CXFLAGS) -o $@ $<
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $^
 
 clean:
-	rm -f sdl2_spn.dylib
-	rm *.o
+	rm -f $(TARGET) $(OBJECTS)

@@ -1,5 +1,5 @@
 //
-// ttf_support.cpp
+// sdl2_ttf.cpp
 // sdl2-sparkling
 //
 // Created by Arpad Goretity
@@ -8,7 +8,7 @@
 // Licensed under the 2-clause BSD License
 //
 
-#include "ttf_support.h"
+#include "sdl2_ttf.h"
 
 #include <unordered_map>
 #include <memory>
