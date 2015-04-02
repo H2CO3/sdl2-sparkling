@@ -327,6 +327,18 @@ static SpnValue event_to_hashmap(SDL_Event *event)
 		// do _not_ release 'timer' - we do not own it
 		break;
 	}
+	case SDL_WINDOWEVENT: {
+		type = "window";
+		set_integer_property(hm, "ID", event->window.windowID);
+
+		// set SDL_WindowEventID (SHOWN, HIDDEN, EXPOSED, etc)
+		set_integer_property(hm, "event", event->window.event);
+
+		// set event dependent data
+		set_integer_property(hm, "data1", event->window.data1);
+		set_integer_property(hm, "data2", event->window.data2);
+		break;
+	}
 	default:
 		break;
 	}
