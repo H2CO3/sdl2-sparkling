@@ -184,9 +184,9 @@ void spnlib_sdl2_linear_gradient(
 	SDL_Renderer *renderer,
 	SDL_Point start,
 	SDL_Point end,
-	double m, // slope gradient's main color line
+	double m, // slope of gradient's main color line
 	const SPN_SDL_ColorStop color_stops[],
-	unsigned n // number of color_stops and stop_points
+	unsigned n // number of color_stops
 )
 {
 	// Save original drawing color
