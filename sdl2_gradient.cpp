@@ -83,34 +83,6 @@ bool spnlib_sdl2_array_to_colorstop(
 	return true;
 }
 
-// Colors are vectors! Let's take their linear combinations...
-static SDL_Color operator*(SDL_Color c, double lambda)
-{
-	lambda = std::min(std::max(0.0, lambda), 1.0);
-
-	return {
-		Uint8(c.r * lambda),
-		Uint8(c.g * lambda),
-		Uint8(c.b * lambda),
-		Uint8(c.a * lambda)
-	};
-}
-
-static SDL_Color operator*(double lambda, SDL_Color c)
-{
-	return c * lambda;
-}
-
-static SDL_Color operator+(SDL_Color c1, SDL_Color c2)
-{
-	return {
-		Uint8(c1.r + c2.r),
-		Uint8(c1.g + c2.g),
-		Uint8(c1.b + c2.b),
-		Uint8(c1.a + c2.a)
-	};
-}
-
 static SDL_Color interpolate_color(
 	const SPN_SDL_ColorStop color_stops[],
 	unsigned n,
@@ -147,7 +119,16 @@ static SDL_Color interpolate_color(
 	double p0 = it[-1].p;
 	double p1 = it[0].p;
 	double q = (p - p0) / (p1 - p0);
-	return (1 - q) * it[-1].color + q * it[0].color;
+
+	// return (1 - q) * it[-1].color + q * it[0].color;
+	// https://www.youtube.com/watch?v=LKnqECcg6Gw
+	auto c0 = it[-1].color;
+	auto c1 = it[0].color;
+	Uint8 r = std::sqrt(c0.r * c0.r * (1 - q) + c1.r * c1.r * q);
+	Uint8 g = std::sqrt(c0.g * c0.g * (1 - q) + c1.g * c1.g * q);
+	Uint8 b = std::sqrt(c0.b * c0.b * (1 - q) + c1.b * c1.b * q);
+	Uint8 a = std::sqrt(c0.a * c0.a * (1 - q) + c1.a * c1.a * q);
+	return { r, g, b, a };
 }
 
 static void renderPixelBuffer(
