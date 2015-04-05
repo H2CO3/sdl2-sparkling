@@ -187,14 +187,29 @@ void spnlib_sdl2_linear_gradient(
 			// On this line, the progress 'p' is proportional
 			// to the distance from the origin (1 = the lenght of the diagonal).
 			// 'isochromatic' lines are perpendicular to this line: m_perp = -1 / m
-			int delta_x = (y - m * x) / (m + 1 / m);
-			int delta_y = -1 / m * delta_x;
+			int delta_x, delta_y;
+			if (m == 0) {
+				delta_x = 0;
+				delta_y = -y;
+			} else if (1 / m == 0) {
+				// +/- infty
+				delta_x = -x;
+				delta_y = 0;
+			} else {
+				delta_x = (y - m * x) / (m + 1 / m);
+				delta_y = -1 / m * delta_x;
+			}
 
-			// compute color stop parameter
-			double hyp = dx * dx + dy * dy;
 			int xp = x + delta_x;
 			int yp = y + delta_y;
-			double p = std::sqrt((xp * xp + yp * yp) / hyp);
+
+			// compute color stop parameter
+			double p;
+			if (std::abs(m) < std::abs(double(dy) / dx)) {
+				p = std::abs(double(xp) / dx);
+			} else {
+				p = std::abs(double(yp) / dy);
+			}
 
 			// interpolate between neighboring color stops
 			auto c = interpolate_color(color_stops, n, p);
