@@ -1,0 +1,59 @@
+let SDL = dynld("sdl2");
+
+var w = SDL::OpenWindow("Conical Gradient Demo", 640, 480);
+
+// Let's draw a gear!
+w.conicalGradient(w.width / 2, w.height / 2, 200, 200, [{
+	"p": 0,
+	"r": 1,
+	"g": 0.9,
+	"b": 0.95,
+	"a": 1
+}, {
+	"p": 0.15,
+	"r": 0.5,
+	"g": 0.5,
+	"b": 0.5,
+	"a": 1
+}, {
+	"p": 0.35,
+	"r": 0.75,
+	"g": 0.75,
+	"b": 0.75,
+	"a": 1
+}, {
+	"p": 0.45,
+	"r": 0.25,
+	"g": 0.25,
+	"b": 0.25,
+	"a": 1
+}, {
+	"p": 0.7,
+	"r": 0.85,
+	"g": 0.85,
+	"b": 0.85,
+	"a": 1
+}, {
+	"p": 0.9,
+	"r": 0.4,
+	"g": 0.4,
+	"b": 0.4,
+	"a": 1
+}, {
+	"p": 1,
+	"r": 1,
+	"g": 0.9,
+	"b": 0.97,
+	"a": 1
+}]);
+
+w.refresh();
+
+while true {
+	var e;
+	while (e = SDL::PollEvent()) != null {
+		if e.type == "quit" {
+			return;
+		}
+	}
+}

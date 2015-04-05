@@ -1,0 +1,52 @@
+let SDL = dynld("sdl2");
+
+var w = SDL::OpenWindow("Linear Gradient Test", 640, 480);
+
+w.linearGradient(w.width, w.height, 0, 0, 4, 3, [{
+	"p": 0,
+	"r": 0,
+	"g": 0,
+	"b": 0,
+	"a": 1
+}, {
+	"p": 0.2,
+	"r": 1,
+	"g": 0,
+	"b": 0,
+	"a": 1
+}, {
+	"p": 0.4,
+	"r": 0,
+	"g": 1,
+	"b": 0,
+	"a": 1
+}, {
+	"p": 0.6,
+	"r": 1,
+	"g": 1,
+	"b": 0,
+	"a": 1
+}, {
+	"p": 0.8,
+	"r": 0,
+	"g": 0,
+	"b": 1,
+	"a": 1
+}, {
+	"p": 1,
+	"r": 1,
+	"g": 1,
+	"b": 1,
+	"a": 1
+}]);
+
+w.refresh();
+
+while true {
+	var e;
+	while (e = SDL::PollEvent()) != null {
+		if e.type == "quit" {
+			return;
+		}
+	}
+}

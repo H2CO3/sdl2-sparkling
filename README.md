@@ -178,10 +178,12 @@ angle start and end angle stop. Angles are measured in radians.
 Draw an ellipse with center point (x, y), horizontal semi-axis rx
 and veritcal semi-axis ry.
 
-    fillPolygon(x1, y1, x2, y2, x3, y3, ...)
+    fillPolygon(x1, coords)
 
-Fills the polyon enclosed by the points at coordinates (x1, y1),
-(x2, y2), (x3, y3), etc. At least 3 points must be specified.
+Fills the polyon enclosed by the points at coordinates `(x1, y1)`,
+`(x2, y2)`, `(x3, y3)`, etc., where `x1, y1, x2, y2`, etc. are
+consecutive numbers in the `coords` array.
+At least 3 points (6 coordinates) must be specified.
 
     strokeRoundedRect(x, y, w, h, r)
     fillRoundedRect(x, y, w, h, r)
@@ -189,11 +191,14 @@ Fills the polyon enclosed by the points at coordinates (x1, y1),
 same as `strokeRect()` and `fillRect()`, except the corners of the
 rectangles will be rounded, with radius `r`.
 
-    bezier(steps, x1, y1, x2, y2, x3, y3, ...)
+    bezier(steps, coords)
 
 Draws a Bezier curve through the specified points, using `steps` steps
 to interpolate between two consecutive points. `steps` must be at least
-2, the number of points must be at least 3.
+2, the number of points must be at least 3. The coordinates are specified
+using the `coords` array. Every element of the array must be a number;
+pairs of consecutive numbers are the X and Y coordinates of the next
+point of the curve, i. e. `[x1, y1, x2, y2, x3, y3, ...]`
 
     line(x, y, dx, dy)
 
@@ -210,13 +215,16 @@ font. if `hq` is `true`, the rendering will be higher-quality but slower
 than if it was `false`. Returns the texture with the rendered text.
 (this function does not actually do drawing -- in order to blit the
 resulting texture to the window, use `renderTexture()`.)
+This function raises a runtime error if currently there's no font set
+in the window.
 
     textSize(text)
 
 Returns a hasmap with keys `width` and `height` which are integers
 specifying the size of the given `text` rendered using the current
 font. (No actual rendering is done, only the computation of the
-font size is carried out using kerning.)
+font size is carried out using kerning.) Raises a runtime error if
+there's no font set in the window currently.
 
     renderTexture(texture, x, y)
 
@@ -227,3 +235,48 @@ Blits the contents of `texture` at point `(x, y)` to the window.
 Loads the file at `filename` into memory. Returns the
 resulting texture object on success and `nil` on error.
 
+    linearGradient(x1, y1, x2, y2, dx, dy, colorStops)
+
+Draws a linear gradient inside the rectangle enclosed by points
+`(x1, y1)` and `(x2, y2)`. `dx` and `dy` are components of the
+direction vector of the line along which you wish to draw the
+gradient. `colorStops` is an array of hashmaps. Each element of
+the array must have at least the following keys-value pairs:
+
+ - `r`, `g`, `b`, `a`: normalized (1…0) (usually floating-point)
+   components of the color at the corresponding color-stop point.
+ - `p` is the normalized progress/ratio of the color stop object,
+   also a number between 0 and 1.
+
+There must be at least 2 color-stop points. Here's how such a
+linear gradient looks like:
+
+![linear gradient](linear_gradient.png)
+
+<!-- commity comment -->
+
+    radialGradient(cx, cy, rx, ry, colorStops)
+    conicalGradient(cx, cy, rx, ry, colorStops)
+
+These functions draw a radial or conical gradient, respectively.
+`cx` and `cy` are the coordinates of the enclosing ellipse.
+`rx` and `ry` are the horizonal and vertical semi-axes thereof.
+`colorStops` have the same purpose and layout as discussed above.
+
+Here's an example of a radial gradient:
+
+![radial gradient](radial_gradient.png)
+
+And a conical one:
+
+![conical gradient](conical_gradient.png)
+
+## Examples
+
+For example code, see the Sparkling files:
+
+- [`example_docsig.spn`](example_docsig.spn)
+- [`example_graph.spn`](example_graph.spn)
+- [`demo_linear_gradient.spn`](demo_linear_gradient.spn)
+- [`demo_radial_gradient.spn`](demo_radial_gradient.spn)
+- [`demo_conical_gradient.spn`](demo_conical_gradient.spn)

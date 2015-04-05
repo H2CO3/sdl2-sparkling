@@ -76,7 +76,7 @@ struct FontDeleter {
 	}
 };
 
-SPN_API TTF_Font *spnlib_sdl2_get_font(
+TTF_Font *spnlib_sdl2_get_font(
 	const char *name,
 	int ptsize,
 	const char *style
@@ -98,6 +98,11 @@ SPN_API TTF_Font *spnlib_sdl2_get_font(
 		ptr = std::unique_ptr<TTF_Font, FontDeleter> {
 			TTF_OpenFont(fname.c_str(), ptsize)
 		};
+	}
+
+	// could not open font
+	if (ptr == nullptr) {
+		return nullptr;
 	}
 
 	TTF_Font *font = ptr.get();

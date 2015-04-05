@@ -56,11 +56,7 @@ static inline void spnlib_sdl2_argtype_mismatch(
 #define BOOLARG(index) spn_boolvalue(&argv[index])
 #define INTARG(index) spn_intvalue(&argv[index])
 #define FLOATARG(index) spn_floatvalue(&argv[index])
-#define NUMARG(index)											\
-	(spn_isfloat(&argv[index])									\
-	 ? spn_floatvalue(&argv[index])								\
-	 : spn_intvalue(&argv[index]))
-
+#define NUMARG(index) spn_floatvalue_f(&argv[index])
 #define STRARG(index) (spn_stringvalue(&argv[index])->cstr)
 #define STRLENARG(index) (spn_stringvalue(&argv[index])->len)
 #define ARRAYARG(index) spn_arrayvalue(&argv[index])

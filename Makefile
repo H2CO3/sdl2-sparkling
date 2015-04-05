@@ -14,7 +14,7 @@ LDFLAGS = -dynamiclib \
           -lsdl2_ttf \
           -lsdl2_image
 
-TARGET = sdl2_spn.dylib
+TARGET = sdl2.dylib
 OBJECTS  = $(patsubst %.c, %.o, $(wildcard *.c))
 OBJECTS += $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 

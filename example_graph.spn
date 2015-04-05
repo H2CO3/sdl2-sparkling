@@ -42,7 +42,7 @@ let ast = {
 let f = compileast(ast);
 
 # Create canvas...
-let SDL = dynld("sdl2_spn");
+let SDL = dynld("sdl2");
 # ...in full-screen mode!
 let w = SDL::OpenWindow("Function Grapher");
 

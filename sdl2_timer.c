@@ -59,7 +59,7 @@ static Uint32 native_timer_callback(Uint32 delay, void *data)
 }
 
 // Initiate a timer and return the corresponding descriptor object.
-// Times are recurring: you must explicitly stop them if you don't
+// Timers are recurring: you must explicitly stop them if you don't
 // want them to fire continuously.
 // Also, when a timer descriptr object is deallocated (goes out of
 // scope), its corresponding timer will be stopped automatically.
@@ -74,12 +74,12 @@ int spnlib_SDL_StartTimer(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, number);
 
-	if (argc > 1) {
+	if (argc >= 2) {
 		CHECK_ARG_RETURN_ON_ERROR(1, func);
 	}
 
 	double dt = NUMARG(0);
-	SpnFunction *callback = argc > 1 ? FUNCARG(1) : NULL;
+	SpnFunction *callback = argc >= 2 ? FUNCARG(1) : NULL;
 
 	spn_SDL_Timer *timer = spn_object_new(&spn_SDL_Timer_class);
 	SDL_TimerID timerID = SDL_AddTimer(dt * 1000, native_timer_callback, timer);

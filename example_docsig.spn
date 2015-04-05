@@ -1,7 +1,7 @@
 # a Doctor's Signature Generator using
 # random Bezier curves, SDL and Sparkling
 
-let SDL = dynld("sdl2_spn");
+let SDL = dynld("sdl2");
 
 let w = SDL::OpenWindow("Doctor's Signature Generator", 640, 480);
 
@@ -19,9 +19,8 @@ let drawBezier = fn (window) {
 
 	# Actually draw Bezier curve, 10 interpolation steps per point
 	let coords = randomCoords();
-	let arguments = [window, 10].concat(coords);
 	window.setColor(0.5, 0.25, 1, 1);
-	SDL::Window::bezier.call(arguments);
+	window.bezier(10, coords);
 
 	window.refresh();
 };

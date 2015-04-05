@@ -25,6 +25,7 @@
 #include "sdl2_timer.h"
 #include "sdl2_texture.h"
 #include "sdl2_image.h"
+#include "sdl2_gradient.h"
 
 
 /////////////////////////////////
@@ -75,6 +76,7 @@ static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height, U
 	}
 
 	spn_SDL_Window *obj = spn_object_new(&spn_SDL_Window_class);
+
 	obj->window = SDL_CreateWindow(
 		title,
 		SDL_WINDOWPOS_UNDEFINED,
@@ -89,6 +91,8 @@ static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height, U
 		-1,
 		SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 	);
+
+	obj->font = NULL;
 
 	*ID = SDL_GetWindowID(obj->window);
 	return spn_makestrguserinfo(obj);
@@ -477,6 +481,7 @@ static int spnlib_SDL_Window_fillEllipse(SpnValue *ret, int argc, SpnValue *argv
 static int spnlib_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_ARG_RETURN_ON_ERROR(1, array);
 
 	SpnHashMap *hm = HASHMAPARG(0);
 	spn_SDL_Window *window = window_from_hashmap(hm);
@@ -487,16 +492,16 @@ static int spnlib_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv
 	}
 
 	SDL_Renderer *renderer = window->renderer;
+	SpnArray *coords = ARRAYARG(1);
 
-	int first_coord_index = 1;
-	int ncoords = argc - first_coord_index;
+	size_t ncoords = spn_array_count(coords);
+	size_t npoints = ncoords / 2;
 
 	if (ncoords % 2 != 0) {
 		spn_ctx_runtime_error(ctx, "you must supply pairs of coordinates", NULL);
 		return -2;
 	}
 
-	int npoints = ncoords / 2;
 	if (npoints < 3) {
 		spn_ctx_runtime_error(ctx, "you must specify at least 3 points", NULL);
 		return -3;
@@ -505,11 +510,17 @@ static int spnlib_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv
 	Sint16 vx[npoints];
 	Sint16 vy[npoints];
 
-	for (int i = 0; i < ncoords; i += 2) {
-		CHECK_ARG_RETURN_ON_ERROR(first_coord_index + i, number);
-		CHECK_ARG_RETURN_ON_ERROR(first_coord_index + i + 1, number);
-		vx[i / 2] = NUMARG(first_coord_index + i);
-		vy[i / 2] = NUMARG(first_coord_index + i + 1);
+	for (size_t i = 0; i < ncoords; i += 2) {
+		SpnValue x = spn_array_get(coords, i);
+		SpnValue y = spn_array_get(coords, i + 1);
+
+		if (!spn_isnumber(&x) || !spn_isnumber(&y)) {
+			spn_ctx_runtime_error(ctx, "coordinates must be numbers", NULL);
+			return -4;
+		}
+
+		vx[i / 2] = spn_intvalue_f(&x);
+		vy[i / 2] = spn_intvalue_f(&y);
 	}
 
 	Uint8 R, G, B, A;
@@ -584,6 +595,7 @@ static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, voi
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
 	CHECK_ARG_RETURN_ON_ERROR(1, int);
+	CHECK_ARG_RETURN_ON_ERROR(2, array);
 
 	SpnHashMap *hm = HASHMAPARG(0);
 	spn_SDL_Window *window = window_from_hashmap(hm);
@@ -594,6 +606,7 @@ static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, voi
 	}
 
 	SDL_Renderer *renderer = window->renderer;
+	SpnArray *coords = ARRAYARG(2);
 
 	int steps = INTARG(1);
 	if (steps < 2) {
@@ -601,15 +614,14 @@ static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, voi
 		return -2;
 	}
 
-	int first_coord_index = 2;
-	int ncoords = argc - first_coord_index;
+	size_t ncoords = spn_array_count(coords);
+	size_t npoints = ncoords / 2;
 
 	if (ncoords % 2 != 0) {
 		spn_ctx_runtime_error(ctx, "you must supply pairs of coordinates", NULL);
 		return -3;
 	}
 
-	int npoints = ncoords / 2;
 	if (npoints < 3) {
 		spn_ctx_runtime_error(ctx, "you must specify at least 3 points", NULL);
 		return -4;
@@ -618,11 +630,17 @@ static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, voi
 	Sint16 vx[npoints];
 	Sint16 vy[npoints];
 
-	for (int i = 0; i < ncoords; i += 2) {
-		CHECK_ARG_RETURN_ON_ERROR(first_coord_index + i, number);
-		CHECK_ARG_RETURN_ON_ERROR(first_coord_index + i + 1, number);
-		vx[i / 2] = NUMARG(first_coord_index + i);
-		vy[i / 2] = NUMARG(first_coord_index + i + 1);
+	for (size_t i = 0; i < ncoords; i += 2) {
+		SpnValue x = spn_array_get(coords, i);
+		SpnValue y = spn_array_get(coords, i + 1);
+
+		if (!spn_isnumber(&x) || !spn_isnumber(&y)) {
+			spn_ctx_runtime_error(ctx, "coordinates must be numbers", NULL);
+			return -5;
+		}
+
+		vx[i / 2] = spn_intvalue_f(&x);
+		vy[i / 2] = spn_intvalue_f(&y);
 	}
 
 	Uint8 R, G, B, A;
@@ -700,6 +718,11 @@ static int spnlib_SDL_Window_renderText(SpnValue *ret, int argc, SpnValue *argv,
 		return -1;
 	}
 
+	if (window->font == NULL) {
+		spn_ctx_runtime_error(ctx, "no font set; call setFont() first", NULL);
+		return -2;
+	}
+
 	SDL_Renderer *renderer = window->renderer;
 
 	const char *text = STRARG(1);
@@ -730,6 +753,11 @@ static int spnlib_SDL_Window_textSize(SpnValue *ret, int argc, SpnValue *argv, v
 	if (window == NULL) {
 		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
 		return -1;
+	}
+
+	if (window->font == NULL) {
+		spn_ctx_runtime_error(ctx, "no font set; call setFont() first", NULL);
+		return -2;
 	}
 
 	const char *text = STRARG(1);
@@ -821,6 +849,141 @@ static int spnlib_SDL_Window_loadImage(SpnValue *ret, int argc, SpnValue *argv, 
 	return 0;
 }
 
+/////////////////////////////////
+//////      GRADIENTS      //////
+/////////////////////////////////
+
+static int spnlib_SDL_Window_linearGradient(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap); // window
+	CHECK_ARG_RETURN_ON_ERROR(1, number);  // x1
+	CHECK_ARG_RETURN_ON_ERROR(2, number);  // y1
+	CHECK_ARG_RETURN_ON_ERROR(3, number);  // x2
+	CHECK_ARG_RETURN_ON_ERROR(4, number);  // y2
+	CHECK_ARG_RETURN_ON_ERROR(5, number);  // delta x (for computing slope)
+	CHECK_ARG_RETURN_ON_ERROR(6, number);  // delta y        - " -
+	CHECK_ARG_RETURN_ON_ERROR(7, array);   // color-stops
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	SDL_Point start = { NUMARG(1), NUMARG(2) };
+	SDL_Point end   = { NUMARG(3), NUMARG(4) };
+
+	double dx = NUMARG(5);
+	double dy = NUMARG(6);
+
+	if (dx == 0 && dy == 0) {
+		spn_ctx_runtime_error(ctx, "direction vector must have nonzero length", NULL);
+		return -2;
+	}
+
+	SpnArray *arr = ARRAYARG(7);
+	size_t n_stops = spn_array_count(arr);
+	SPN_SDL_ColorStop color_stops[n_stops];
+	bool success = spnlib_sdl2_array_to_colorstop(arr, color_stops);
+
+	if (!success) {
+		spn_ctx_runtime_error(ctx, "invalid color stop specification", NULL);
+		return -3;
+	}
+
+	spnlib_sdl2_linear_gradient(
+		window->renderer,
+		start,
+		end,
+		dy / dx,
+		color_stops,
+		n_stops
+	);
+
+	return 0;
+}
+
+static int spnlib_SDL_Window_ellipsoidalGradient(
+	SpnValue *ret,
+	int argc,
+	SpnValue *argv,
+	void *ctx,
+	void (*gradientPainter)(
+		SDL_Renderer *renderer,
+		SDL_Point center,
+		int rx,
+		int ry,
+		const SPN_SDL_ColorStop color_stops[],
+		unsigned n
+	)
+)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap); // window
+	CHECK_ARG_RETURN_ON_ERROR(1, number);  // center x
+	CHECK_ARG_RETURN_ON_ERROR(2, number);  // center y
+	CHECK_ARG_RETURN_ON_ERROR(3, number);  // rx
+	CHECK_ARG_RETURN_ON_ERROR(4, number);  // ry
+	CHECK_ARG_RETURN_ON_ERROR(5, array);   // color-stops
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	int cx = NUMARG(1);
+	int cy = NUMARG(2);
+	int rx = NUMARG(3);
+	int ry = NUMARG(4);
+
+	SpnArray *arr = ARRAYARG(5);
+	size_t n_stops = spn_array_count(arr);
+	SPN_SDL_ColorStop color_stops[n_stops];
+	bool success = spnlib_sdl2_array_to_colorstop(arr, color_stops);
+
+	if (!success) {
+		spn_ctx_runtime_error(ctx, "invalid color stop specification", NULL);
+		return -2;
+	}
+
+	gradientPainter(
+		window->renderer,
+		(SDL_Point){ cx, cy },
+		rx,
+		ry,
+		color_stops,
+		n_stops
+	);
+
+	return 0;
+}
+
+static int spnlib_SDL_Window_radialGradient(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	return spnlib_SDL_Window_ellipsoidalGradient(
+		ret,
+		argc,
+		argv,
+		ctx,
+		spnlib_sdl2_radial_gradient
+	);
+}
+
+static int spnlib_SDL_Window_conicalGradient(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	return spnlib_SDL_Window_ellipsoidalGradient(
+		ret,
+		argc,
+		argv,
+		ctx,
+		spnlib_sdl2_conical_gradient
+	);
+}
+
 //
 // Library initialization and deinitialization
 //
@@ -872,7 +1035,10 @@ static void spn_SDL_construct_library(void)
 		{ "renderText",        spnlib_SDL_Window_renderText        },
 		{ "textSize",          spnlib_SDL_Window_textSize          },
 		{ "renderTexture",     spnlib_SDL_Window_renderTexture     },
-		{ "loadImage",         spnlib_SDL_Window_loadImage         }
+		{ "loadImage",         spnlib_SDL_Window_loadImage         },
+		{ "linearGradient",    spnlib_SDL_Window_linearGradient    },
+		{ "radialGradient",    spnlib_SDL_Window_radialGradient    },
+		{ "conicalGradient",   spnlib_SDL_Window_conicalGradient   }
 	};
 
 	for (size_t i = 0; i < sizeof window_methods / sizeof window_methods[0]; i++) {
