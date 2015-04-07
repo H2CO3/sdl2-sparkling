@@ -207,28 +207,34 @@ static double constrain_to_01(double x)
 	return x;
 }
 
-// Returns corresponding SDL_BlendMode to given string
+// Returns the SDL_BlendMode corresponding to the given string
 // (Failsafe) Returns NONE if it doesn't correspond to any
 static SDL_BlendMode get_blend_mode_value(const char *name)
 {
-	if (!strcmp(name, "blend")){
-		return SDL_BLENDMODE_BLEND;
+	static const struct {
+		const char *name;
+		SDL_BlendMode mode;
+	} modes[] = {
+		{ "blend", SDL_BLENDMODE_BLEND },
+		{ "add",   SDL_BLENDMODE_ADD   },
+		{ "mod",   SDL_BLENDMODE_MOD   },
+		{ "none",  SDL_BLENDMODE_NONE  }
+	};
+
+	for (size_t i = 0; i < sizeof modes / sizeof modes[0]; i++) {
+		if (strcmp(modes[i].name, name) == 0) {
+			return modes[i].mode;
+		}
 	}
-	else if (!strcmp(name, "add")){
-		return SDL_BLENDMODE_ADD;
-	}
-	else if (!strcmp(name, "mod")){
-		return SDL_BLENDMODE_MOD;
-	}
-	// else
+
+	// default to none
 	return SDL_BLENDMODE_NONE;
 }
 
-// Does the reverse of the above function:
-// Returns corresponding string to given SDL_BlendMode
-// However, this one certifies that NONE is an option
+// Does the inverse of the above function:
+// returns a string corresponding to the given SDL_BlendMode
 static const char *get_blend_mode_name(SDL_BlendMode mode){
-	switch (mode){
+	switch (mode) {
 	case SDL_BLENDMODE_NONE:  return "none";
 	case SDL_BLENDMODE_BLEND: return "blend";
 	case SDL_BLENDMODE_ADD:   return "add";
@@ -282,7 +288,9 @@ static int spnlib_SDL_Window_getBlendMode(SpnValue *ret, int argc, SpnValue *arg
 	SDL_GetRenderDrawBlendMode(renderer, &mode);
 	const char *name = get_blend_mode_name(mode);
 
-	*ret = spn_makestring(name);
+	// we don't need to copy, the mode name is always
+	// a string literal (statically allocated)
+	*ret = spn_makestring_nocopy(name);
 
 	return 0;
 }

@@ -142,13 +142,13 @@ normalized ([0...1]) floating-point numbers.
 
     setBlendMode(mode)
 
-Sets the current drawing blend mode in order to specify how the alpha
-channel is used. `mode` is one of SDL's four Blend Modes:
-"none", "blend", "add" or "mod"
+Sets the current drawing blend mode in order to specify how the
+alpha channel is used. `mode` is one of SDL's four Blend Modes:
+`"none"`, `"blend"`, `"add"` or `"mod"`.
 
     getBlendMode()
 
-Returns the name of the blend mode being currently used.
+Returns the name of the current blend mode.
 
     setFont(name, ptsize, style)
 
