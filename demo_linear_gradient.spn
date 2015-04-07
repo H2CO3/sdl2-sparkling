@@ -2,7 +2,7 @@ let SDL = dynld("sdl2");
 
 var w = SDL::OpenWindow("Linear Gradient Test", 640, 480);
 
-w.linearGradient(w.width, w.height, 0, 0, 4, 3, [{
+let texture = w.linearGradient(w.width, w.height, +1.0, +0.0, [{
 	"p": 0,
 	"r": 0,
 	"g": 0,
@@ -40,6 +40,7 @@ w.linearGradient(w.width, w.height, 0, 0, 4, 3, [{
 	"a": 1
 }]);
 
+w.renderTexture(texture, 0, 0);
 w.refresh();
 
 while true {

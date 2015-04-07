@@ -856,75 +856,10 @@ static int spnlib_SDL_Window_loadImage(SpnValue *ret, int argc, SpnValue *argv, 
 static int spnlib_SDL_Window_linearGradient(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap); // window
-	CHECK_ARG_RETURN_ON_ERROR(1, number);  // x1
-	CHECK_ARG_RETURN_ON_ERROR(2, number);  // y1
-	CHECK_ARG_RETURN_ON_ERROR(3, number);  // x2
-	CHECK_ARG_RETURN_ON_ERROR(4, number);  // y2
-	CHECK_ARG_RETURN_ON_ERROR(5, number);  // delta x (for computing slope)
-	CHECK_ARG_RETURN_ON_ERROR(6, number);  // delta y        - " -
-	CHECK_ARG_RETURN_ON_ERROR(7, array);   // color-stops
-
-	SpnHashMap *hm = HASHMAPARG(0);
-	spn_SDL_Window *window = window_from_hashmap(hm);
-
-	if (window == NULL) {
-		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
-		return -1;
-	}
-
-	SDL_Point start = { NUMARG(1), NUMARG(2) };
-	SDL_Point end   = { NUMARG(3), NUMARG(4) };
-
-	double dx = NUMARG(5);
-	double dy = NUMARG(6);
-
-	if (dx == 0 && dy == 0) {
-		spn_ctx_runtime_error(ctx, "direction vector must have nonzero length", NULL);
-		return -2;
-	}
-
-	SpnArray *arr = ARRAYARG(7);
-	size_t n_stops = spn_array_count(arr);
-	SPN_SDL_ColorStop color_stops[n_stops];
-	bool success = spnlib_sdl2_array_to_colorstop(arr, color_stops);
-
-	if (!success) {
-		spn_ctx_runtime_error(ctx, "invalid color stop specification", NULL);
-		return -3;
-	}
-
-	spnlib_sdl2_linear_gradient(
-		window->renderer,
-		start,
-		end,
-		dy / dx,
-		color_stops,
-		n_stops
-	);
-
-	return 0;
-}
-
-static int spnlib_SDL_Window_ellipsoidalGradient(
-	SpnValue *ret,
-	int argc,
-	SpnValue *argv,
-	void *ctx,
-	void (*gradientPainter)(
-		SDL_Renderer *renderer,
-		SDL_Point center,
-		int rx,
-		int ry,
-		const SPN_SDL_ColorStop color_stops[],
-		unsigned n
-	)
-)
-{
-	CHECK_ARG_RETURN_ON_ERROR(0, hashmap); // window
-	CHECK_ARG_RETURN_ON_ERROR(1, number);  // center x
-	CHECK_ARG_RETURN_ON_ERROR(2, number);  // center y
-	CHECK_ARG_RETURN_ON_ERROR(3, number);  // rx
-	CHECK_ARG_RETURN_ON_ERROR(4, number);  // ry
+	CHECK_ARG_RETURN_ON_ERROR(1, number);  // w
+	CHECK_ARG_RETURN_ON_ERROR(2, number);  // h
+	CHECK_ARG_RETURN_ON_ERROR(3, number);  // delta x (for computing slope)
+	CHECK_ARG_RETURN_ON_ERROR(4, number);  // delta y        - " -
 	CHECK_ARG_RETURN_ON_ERROR(5, array);   // color-stops
 
 	SpnHashMap *hm = HASHMAPARG(0);
@@ -935,10 +870,10 @@ static int spnlib_SDL_Window_ellipsoidalGradient(
 		return -1;
 	}
 
-	int cx = NUMARG(1);
-	int cy = NUMARG(2);
-	int rx = NUMARG(3);
-	int ry = NUMARG(4);
+	int w = NUMARG(1);
+	int h = NUMARG(2);
+	double dx = NUMARG(3);
+	double dy = NUMARG(4);
 
 	SpnArray *arr = ARRAYARG(5);
 	size_t n_stops = spn_array_count(arr);
@@ -950,15 +885,81 @@ static int spnlib_SDL_Window_ellipsoidalGradient(
 		return -2;
 	}
 
-	gradientPainter(
+	SDL_Texture *texture = spnlib_sdl2_linear_gradient(
 		window->renderer,
-		(SDL_Point){ cx, cy },
+		w,
+		h,
+		dx,
+		dy,
+		color_stops,
+		n_stops
+	);
+
+	if (texture == NULL) {
+		spn_ctx_runtime_error(ctx, "invalid dimensions or bad number of color stops", NULL);
+		return -3;
+	}
+
+	spn_SDL_Texture *obj = spnlib_SDL_texture_new(texture);
+	*ret = spn_makestrguserinfo(obj);
+	return 0;
+}
+
+static int spnlib_SDL_Window_ellipsoidalGradient(
+	SpnValue *ret,
+	int argc,
+	SpnValue *argv,
+	void *ctx,
+	SDL_Texture *(*gradientPainter)(
+		SDL_Renderer *renderer,
+		int rx,
+		int ry,
+		const SPN_SDL_ColorStop color_stops[],
+		unsigned n
+	)
+)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap); // window
+	CHECK_ARG_RETURN_ON_ERROR(1, number);  // rx
+	CHECK_ARG_RETURN_ON_ERROR(2, number);  // ry
+	CHECK_ARG_RETURN_ON_ERROR(3, array);   // color-stops
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	int rx = NUMARG(1);
+	int ry = NUMARG(2);
+
+	SpnArray *arr = ARRAYARG(3);
+	size_t n_stops = spn_array_count(arr);
+	SPN_SDL_ColorStop color_stops[n_stops];
+	bool success = spnlib_sdl2_array_to_colorstop(arr, color_stops);
+
+	if (!success) {
+		spn_ctx_runtime_error(ctx, "invalid color stop specification", NULL);
+		return -2;
+	}
+
+	SDL_Texture *texture = gradientPainter(
+		window->renderer,
 		rx,
 		ry,
 		color_stops,
 		n_stops
 	);
 
+	if (texture == NULL) {
+		spn_ctx_runtime_error(ctx, "invalid dimensions or bad number of color stops", NULL);
+		return -3;
+	}
+
+	spn_SDL_Texture *obj = spnlib_SDL_texture_new(texture);
+	*ret = spn_makestrguserinfo(obj);
 	return 0;
 }
 

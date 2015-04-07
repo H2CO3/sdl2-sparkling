@@ -2,7 +2,7 @@ let SDL = dynld("sdl2");
 
 var w = SDL::OpenWindow("Radial Gradient Demo", 640, 480);
 
-w.radialGradient(w.width / 2, w.height / 2, w.width / 2, w.height / 2, [{
+let texture = w.radialGradient(w.width / 2, w.height / 2, [{
 	"p": 0,
 	"r": 1,
 	"g": 1,
@@ -40,6 +40,7 @@ w.radialGradient(w.width / 2, w.height / 2, w.width / 2, w.height / 2, [{
 	"a": 1
 }]);
 
+w.renderTexture(texture, 0, 0);
 w.refresh();
 
 while true {

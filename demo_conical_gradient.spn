@@ -3,7 +3,8 @@ let SDL = dynld("sdl2");
 var w = SDL::OpenWindow("Conical Gradient Demo", 640, 480);
 
 // Let's draw a gear!
-w.conicalGradient(w.width / 2, w.height / 2, 200, 200, [{
+let R = 200;
+let texture = w.conicalGradient(R, R, [{
 	"p": 0,
 	"r": 1,
 	"g": 0.9,
@@ -47,6 +48,7 @@ w.conicalGradient(w.width / 2, w.height / 2, 200, 200, [{
 	"a": 1
 }]);
 
+w.renderTexture(texture, (w.width - R) / 2, (w.height - R) / 2);
 w.refresh();
 
 while true {

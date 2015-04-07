@@ -17,7 +17,7 @@
 
 typedef struct SPN_SDL_ColorStop {
 	SDL_Color color;
-	double p;
+	double progress;
 } SPN_SDL_ColorStop;
 
 SPN_API bool spnlib_sdl2_array_to_colorstop(
@@ -25,27 +25,26 @@ SPN_API bool spnlib_sdl2_array_to_colorstop(
 	SPN_SDL_ColorStop color_stops[]
 );
 
-SPN_API void spnlib_sdl2_linear_gradient(
+SPN_API SDL_Texture *spnlib_sdl2_linear_gradient(
 	SDL_Renderer *renderer,
-	SDL_Point start,
-	SDL_Point end,
-	double m,
+	int w,
+	int h,
+	double vx,
+	double vy,
 	const SPN_SDL_ColorStop color_stops[],
 	unsigned n
 );
 
-SPN_API void spnlib_sdl2_radial_gradient(
+SPN_API SDL_Texture *spnlib_sdl2_radial_gradient(
 	SDL_Renderer *renderer,
-	SDL_Point center,
 	int rx,
 	int ry,
 	const SPN_SDL_ColorStop color_stops[],
 	unsigned n
 );
 
-SPN_API void spnlib_sdl2_conical_gradient(
+SPN_API SDL_Texture *spnlib_sdl2_conical_gradient(
 	SDL_Renderer *renderer,
-	SDL_Point center,
 	int rx,
 	int ry,
 	const SPN_SDL_ColorStop color_stops[],

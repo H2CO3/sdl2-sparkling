@@ -235,10 +235,10 @@ Blits the contents of `texture` at point `(x, y)` to the window.
 Loads the file at `filename` into memory. Returns the
 resulting texture object on success and `nil` on error.
 
-    linearGradient(x1, y1, x2, y2, dx, dy, colorStops)
+    linearGradient(w, h, dx, dy, colorStops)
 
-Draws a linear gradient inside the rectangle enclosed by points
-`(x1, y1)` and `(x2, y2)`. `dx` and `dy` are components of the
+Draws a linear gradient inside a rectangle of size `w * h`.
+and returns the resulting texture. `dx` and `dy` are components of the
 direction vector of the line along which you wish to draw the
 gradient. `colorStops` is an array of hashmaps. Each element of
 the array must have at least the following keys-value pairs:
@@ -255,13 +255,14 @@ linear gradient looks like:
 
 <!-- commity comment -->
 
-    radialGradient(cx, cy, rx, ry, colorStops)
-    conicalGradient(cx, cy, rx, ry, colorStops)
+    radialGradient(rx, ry, colorStops)
+    conicalGradient(rx, ry, colorStops)
 
 These functions draw a radial or conical gradient, respectively.
 `cx` and `cy` are the coordinates of the enclosing ellipse.
 `rx` and `ry` are the horizonal and vertical semi-axes thereof.
 `colorStops` have the same purpose and layout as discussed above.
+The returned texture object can be rendered using `renderTexture()`.
 
 Here's an example of a radial gradient:
 
