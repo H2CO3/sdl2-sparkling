@@ -207,6 +207,87 @@ static double constrain_to_01(double x)
 	return x;
 }
 
+// Returns corresponding SDL_BlendMode to given string
+// (Failsafe) Returns NONE if it doesn't correspond to any
+static SDL_BlendMode get_blend_mode_value(const char *name)
+{
+	if (!strcmp(name, "blend")){
+		return SDL_BLENDMODE_BLEND;
+	}
+	else if (!strcmp(name, "add")){
+		return SDL_BLENDMODE_ADD;
+	}
+	else if (!strcmp(name, "mod")){
+		return SDL_BLENDMODE_MOD;
+	}
+	// else
+	return SDL_BLENDMODE_NONE;
+}
+
+// Does the reverse of the above function:
+// Returns corresponding string to given SDL_BlendMode
+// However, this one certifies that NONE is an option
+static const char *get_blend_mode_name(SDL_BlendMode mode){
+	switch (mode){
+	case SDL_BLENDMODE_NONE:  return "none";
+	case SDL_BLENDMODE_BLEND: return "blend";
+	case SDL_BLENDMODE_ADD:   return "add";
+	case SDL_BLENDMODE_MOD:   return "mod";
+	default:                  return NULL;
+	}
+}
+
+// Set the alpha blend mode
+// Value is a string corresponding to one of SDL's 4 blend modes
+// "blend", "add", "mod" or "none" (or anything else)
+static int spnlib_SDL_Window_setBlendMode(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_ARG_RETURN_ON_ERROR(1, string);
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	SDL_Renderer *renderer = window->renderer;
+
+	const char *name = STRARG(1);
+	SDL_BlendMode mode = get_blend_mode_value(name);
+
+	SDL_SetRenderDrawBlendMode(renderer, mode);
+
+	return 0;
+}
+
+// Returns string with name of the blend mode
+static int spnlib_SDL_Window_getBlendMode(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	SDL_Renderer *renderer = window->renderer;
+
+	SDL_BlendMode mode;
+	SDL_GetRenderDrawBlendMode(renderer, &mode);
+	const char *name = get_blend_mode_name(mode);
+
+	*ret = spn_makestring(name);
+
+	return 0;
+}
+
+
 // Set the drawing color in RGBA format.
 // Color components are expected to be floating-point values
 // in the [0...1] closed interval.
@@ -1017,6 +1098,8 @@ static void spn_SDL_construct_library(void)
 
 	static const SpnExtFunc window_methods[] = {
 		{ "refresh",           spnlib_SDL_Window_refresh           },
+		{ "setBlendMode",      spnlib_SDL_Window_setBlendMode      },
+		{ "getBlendMode",      spnlib_SDL_Window_getBlendMode      },
 		{ "setColor",          spnlib_SDL_Window_setColor          },
 		{ "getColor",          spnlib_SDL_Window_getColor          },
 		{ "setFont",           spnlib_SDL_Window_setFont           },
