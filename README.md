@@ -13,22 +13,22 @@
 <!-- commity-comment -->
 
     // 1.
-    let SDL = dynld("sdl2_spn");
-    
+    let SDL = dynld("sdl2");
+
     // 2.
     let window = SDL::OpenWindow("Title", optionalWidth, optionalHeight);
-    
+
     while true {
         // 3.
         window.fillRect(0, 0, window.width, window.height);
         window.refresh();
-        
+
         // 4.
         var event;
         while (event = SDL::PollEvent()) != nil {
             // do something with 'event' here...
         }
-        
+
         // 5.
     }
 
@@ -132,7 +132,7 @@ the window. Don't call this in a tight loop! (only once per frame)
 
     setColor(r, g, b, a)
 
-Sets the current drawing color of the windowin RGBA format. All
+Sets the current drawing color of the window in RGBA format. All
 parameters are floating-point numbers between 0 and 1.
 
     getColor()
@@ -140,13 +140,23 @@ parameters are floating-point numbers between 0 and 1.
 Returns a hashmap with keys `r`, `g`, `b`, `a`. The values are
 normalized ([0...1]) floating-point numbers.
 
+    setBlendMode(mode)
+
+Sets the current drawing blend mode in order to specify how the alpha
+channel is used. `mode` is one of SDL's four Blend Modes:
+"none", "blend", "add" or "mod"
+
+    getBlendMode()
+
+Returns the name of the blend mode being currently used.
+
     setFont(name, ptsize, style)
 
 Sets the active font for text rendering. `name` is the name of the font,
 it will be used for constructing the font file name to be loaded (by
 appending the string `.ttf` to it). `ptsize` is the font size in points,
 where 72 points = 1 inch. `style` is a whitespace-separated list that
-constist of any of the following substrings:
+consists of any of the following substrings:
 
  - `normal`
  - `bold`
@@ -220,7 +230,7 @@ in the window.
 
     textSize(text)
 
-Returns a hasmap with keys `width` and `height` which are integers
+Returns a hashmap with keys `width` and `height` which are integers
 specifying the size of the given `text` rendered using the current
 font. (No actual rendering is done, only the computation of the
 font size is carried out using kerning.) Raises a runtime error if
@@ -260,7 +270,7 @@ linear gradient looks like:
 
 These functions draw a radial or conical gradient, respectively.
 `cx` and `cy` are the coordinates of the enclosing ellipse.
-`rx` and `ry` are the horizonal and vertical semi-axes thereof.
+`rx` and `ry` are the horizontal and vertical semi-axes thereof.
 `colorStops` have the same purpose and layout as discussed above.
 The returned texture object can be rendered using `renderTexture()`.
 
