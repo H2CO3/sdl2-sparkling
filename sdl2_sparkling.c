@@ -233,7 +233,8 @@ static SDL_BlendMode get_blend_mode_value(const char *name)
 
 // Does the inverse of the above function:
 // returns a string corresponding to the given SDL_BlendMode
-static const char *get_blend_mode_name(SDL_BlendMode mode){
+static const char *get_blend_mode_name(SDL_BlendMode mode)
+{
 	switch (mode) {
 	case SDL_BLENDMODE_NONE:  return "none";
 	case SDL_BLENDMODE_BLEND: return "blend";
@@ -1080,29 +1081,24 @@ static int spnlib_SDL_Window_conicalGradient(SpnValue *ret, int argc, SpnValue *
 
 static const char *get_base_path(void)
 {
-	const char *base = NULL;
-
-	if ((base = SDL_GetBasePath()) == NULL){
-		base = "";
-	}
-
-	return base;
+	const char *base = SDL_GetBasePath();
+	return base ? base : "";
 }
 
 static const char *get_pref_path(const char *org, const char *app)
 {
 	const char *pref = NULL;
 
-	if (org != NULL && app != NULL){
+	if (org != NULL && app != NULL) {
 		pref = SDL_GetPrefPath(org, app);
 	}
 
-	return pref != NULL ? pref : "";
+	return pref ? pref : "";
 }
 
 static int spnlib_SDL_GetPaths(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	if (argc >= 2){
+	if (argc >= 2) {
 		CHECK_ARG_RETURN_ON_ERROR(0, string);
 		CHECK_ARG_RETURN_ON_ERROR(1, string);
 	}
@@ -1123,6 +1119,9 @@ static int spnlib_SDL_GetPaths(SpnValue *ret, int argc, SpnValue *argv, void *ct
 
 	spn_hashmap_set_strkey(paths, "base", &base);
 	spn_hashmap_set_strkey(paths, "pref", &pref);
+
+	spn_value_release(&base);
+	spn_value_release(&pref);
 
 	return 0;
 }
