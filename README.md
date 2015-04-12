@@ -107,7 +107,7 @@ properties are also available:
 Sets up a timer on a background thread and returns the corresponding timer
 object. `interval` is to be specified in seconds (may be fractional).
 If present, `callback` must be a function which will be invoked on the
-background thread everytime the timer fires. If omitted, the timer
+background thread every time the timer fires. If omitted, the timer
 will generate a `timer` event instead (see above).
 
 If the returned timer object is deallocated, the corresponding timer
@@ -119,6 +119,23 @@ variable or a data structure.)
 
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.
+
+<!-- commity-comment -->
+
+    GetPaths([organization, app])
+
+Returns a hashmap with the current `base` path, where the executable is
+located, and `pref` path, where you shall write files (properties, saves,
+among others). The arguments `organization` and `app` stand for the desired
+organization name and the app's name respectively, and only serve to get
+the `pref` path.
+
+If `base` contains an empty string, then the current platform does not
+support this feature. Note that `base` will point to wherever you installed
+Sparkling.  
+If `pref` contains an empty string, either the given arguments aren't
+correct (or given at all), or the current platform does not support
+this feature.
 
 ### Drawing primitives
 
