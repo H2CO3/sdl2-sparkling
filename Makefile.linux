@@ -13,7 +13,7 @@ LDFLAGS = -shared \
           -lSDL2_ttf \
           -lSDL2_image
 
-TARGET = sdl2.dylib
+TARGET = sdl2.so
 OBJECTS  = $(patsubst %.c, %.o, $(wildcard *.c))
 OBJECTS += $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 
@@ -26,7 +26,7 @@ OBJECTS += $(patsubst %.cpp, %.o, $(wildcard *.cpp))
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $^ $(LDFLAGS) -o $@
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
