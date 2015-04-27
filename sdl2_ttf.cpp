@@ -14,6 +14,8 @@
 #include <memory>
 #include <string>
 #include <sstream>
+#include <fstream>
+#include <iterator>
 #include <vector>
 #include <array>
 #include <cstring>

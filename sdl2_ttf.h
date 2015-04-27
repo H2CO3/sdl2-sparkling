@@ -14,7 +14,7 @@
 #include <spn/api.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/sdl_ttf.h>
+#include <SDL2/SDL_ttf.h>
 
 #include "sdl2_texture.h"
 
