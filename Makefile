@@ -17,7 +17,6 @@ ifeq ($(shell uname), Darwin)
 	CXX = clang++
 
 	LDFLAGS += -dynamiclib
-	LDFLAGS += -L/usr/local/Cellar/sdl2_gfx/1.0.0/lib/
 
 	EXT = dylib
 else

@@ -1126,6 +1126,123 @@ static int spnlib_SDL_GetPaths(SpnValue *ret, int argc, SpnValue *argv, void *ct
 	return 0;
 }
 
+///////////////////////////////
+//////   Message Boxes   //////
+///////////////////////////////
+static Uint32 get_messagebox_flag(const char *str) {
+	static const struct {
+		const char *name;
+		Uint32 flag;
+	} flags[] = {
+		{ "error",       SDL_MESSAGEBOX_ERROR       },
+		{ "warning",     SDL_MESSAGEBOX_WARNING     },
+		{ "information", SDL_MESSAGEBOX_INFORMATION },
+		{ "info",        SDL_MESSAGEBOX_INFORMATION }
+	};
+
+	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
+		if (strcmp(flags[i].name, str) == 0) {
+			return flags[i].flag;
+		}
+	}
+	// Defaults to error
+	return SDL_MESSAGEBOX_ERROR;
+}
+
+static Uint32 get_messagebox_button_flag(const char *str) {
+	static const struct {
+		const char *name;
+		Uint32 flag;
+	} flags[] = {
+		{ "return", SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT },
+		{ "escape", SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT }
+	};
+
+	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
+		if (strcmp(flags[i].name, str) == 0) {
+			return flags[i].flag;
+		}
+	}
+	// Defaults to 0
+	return 0;
+}
+
+static SDL_MessageBoxButtonData *get_messagebox_button_data
+(
+	SpnHashMap *hm,
+	int count
+)
+{
+	SpnValue name, flag;
+	size_t cursor = 0, i = 0;
+	SDL_MessageBoxButtonData *buttondata = SDL_malloc(count * sizeof(SDL_MessageBoxButtonData));
+
+	while ((cursor = spn_hashmap_next(hm, cursor, &name, &flag)) != 0) {
+		buttondata[i].flags = get_messagebox_button_flag(spn_stringvalue(&flag)->cstr);
+		buttondata[i].buttonid = i;
+		buttondata[i].text = spn_stringvalue(&name)->cstr;
+		i++;
+	}
+
+	return buttondata;
+}
+
+static void get_message_box_data
+(
+	SDL_MessageBoxData *data,
+	Uint32 flags,
+	SDL_Window *window,
+	const char *title,
+	const char *message,
+	SpnHashMap *buttons
+)
+{
+	data->flags = flags;
+	data->window = window;
+	data->title = title;
+	data->message = message;
+	data->numbuttons = spn_hashmap_count(buttons);
+	data->buttons = get_messagebox_button_data(buttons, data->numbuttons);
+	data->colorScheme = NULL;
+}
+
+static int spnlib_SDL_Window_ShowMessageBox(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_ARG_RETURN_ON_ERROR(1, string);
+	CHECK_ARG_RETURN_ON_ERROR(2, string);
+	CHECK_ARG_RETURN_ON_ERROR(3, string);
+	if (argc > 4) {
+		CHECK_ARG_RETURN_ON_ERROR(4, hashmap);
+	}
+
+	SDL_MessageBoxData data;
+	int buttonid;
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
+
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
+
+	Uint32 flags = get_messagebox_flag(STRARG(1));
+	const char *title = STRARG(2);
+	const char *msg = STRARG(3);
+
+	if (argc == 4) {
+		SDL_ShowSimpleMessageBox(flags, title, msg, window->window);
+	} else {
+		get_message_box_data(&data, flags, window->window, title, msg, HASHMAPARG(4));
+		SDL_ShowMessageBox(&data, &buttonid);
+
+		SDL_free(data.buttons);
+		*ret = spn_makeint(buttonid);
+	}
+
+	return 0;
+}
+
 //
 // Library initialization and deinitialization
 //
@@ -1183,7 +1300,8 @@ static void spn_SDL_construct_library(void)
 		{ "loadImage",         spnlib_SDL_Window_loadImage         },
 		{ "linearGradient",    spnlib_SDL_Window_linearGradient    },
 		{ "radialGradient",    spnlib_SDL_Window_radialGradient    },
-		{ "conicalGradient",   spnlib_SDL_Window_conicalGradient   }
+		{ "conicalGradient",   spnlib_SDL_Window_conicalGradient   },
+		{ "showMessageBox",    spnlib_SDL_Window_ShowMessageBox    }
 	};
 
 	for (size_t i = 0; i < sizeof window_methods / sizeof window_methods[0]; i++) {
