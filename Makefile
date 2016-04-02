@@ -1,6 +1,6 @@
 SRCDIR = src
 
-INCLUDE = -I/usr/local/include -I$(SRCDIR) #$(shell sdl2-config --cflags)
+INCLUDE = -I/usr/local/include #$(shell sdl2-config --cflags)
 
 CFLAGS = -std=c99 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING $(INCLUDE)
 CXFLAGS = -std=c++11 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING $(INCLUDE)
