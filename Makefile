@@ -1,3 +1,5 @@
+SRCDIR = src
+
 INCLUDE = -I/usr/local/include #$(shell sdl2-config --cflags)
 
 CFLAGS = -std=c99 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING $(INCLUDE)
@@ -17,7 +19,6 @@ ifeq ($(shell uname), Darwin)
 	CXX = clang++
 
 	LDFLAGS += -dynamiclib
-	LDFLAGS += -L/usr/local/Cellar/sdl2_gfx/1.0.0/lib/
 
 	EXT = dylib
 else
@@ -33,13 +34,13 @@ endif
 LD = $(CXX)
 
 TARGET = sdl2.$(EXT)
-OBJECTS  = $(patsubst %.c, %.o, $(wildcard *.c))
-OBJECTS += $(patsubst %.cpp, %.o, $(wildcard *.cpp))
+OBJECTS  = $(patsubst $(SRCDIR)/%.c, %.o, $(wildcard $(SRCDIR)/*.c))
+OBJECTS += $(patsubst $(SRCDIR)/%.cpp, %.o, $(wildcard $(SRCDIR)/*.cpp))
 
-%.o: %.c
+%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-%.o: %.cpp
+%.o: $(SRCDIR)/%.cpp
 	$(CXX) $(CXFLAGS) -o $@ $<
 
 all: $(TARGET)

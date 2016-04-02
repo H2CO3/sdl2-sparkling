@@ -1,24 +1,14 @@
 //
-// sdl2_sparkling.c
+// sdl2_window.c
 // sdl2-sparkling
 //
-// Created by Arpad Goretity
-// on 28/03/2015
+// Created by Antonio Sarmento
+// on 02/04/2016
 //
 // Licensed under the 2-clause BSD License
 //
 
-#define USE_DYNAMIC_LOADING 1
-
-#include <assert.h>
-#include <stdbool.h>
-
-#include <spn/ctx.h>
-#include <spn/str.h>
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL2_gfxPrimitives.h>
-
+#include "sdl2_window.h"
 #include "sdl2_sparkling.h"
 #include "sdl2_ttf.h"
 #include "sdl2_event.h"
@@ -26,16 +16,6 @@
 #include "sdl2_texture.h"
 #include "sdl2_image.h"
 #include "sdl2_gradient.h"
-
-
-/////////////////////////////////
-// The returned library object //
-/////////////////////////////////
-static SpnHashMap *library = NULL;
-
-////////////////////////////////////////
-//          The window class          //
-////////////////////////////////////////
 
 typedef struct spn_SDL_Window {
 	SpnObject base;
@@ -60,7 +40,6 @@ static const SpnClass spn_SDL_Window_class = {
 	NULL,
 	spn_SDL_Window_dtor
 };
-
 
 // Helper for OpenWindow
 static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height, Uint32 *ID)
@@ -99,7 +78,7 @@ static SpnValue spn_SDL_Window_new(const char *title, int *width, int *height, U
 }
 
 // Constructor for window objects.
-static int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(0, string);
 
@@ -108,7 +87,7 @@ static int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *
 	SpnHashMap *hm = spn_hashmapvalue(ret);
 
 	// set its prototype
-	SpnValue proto = spn_hashmap_get_strkey(library, "Window");
+	SpnValue proto = spn_get_window_prototype();
 	spn_hashmap_set_strkey(hm, "super", &proto);
 
 	// actually open window
@@ -132,7 +111,6 @@ static int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *
 
 	return 0;
 }
-
 
 // Retrieves an internal window descriptor from
 // a "public" window object
@@ -1076,87 +1054,132 @@ static int spnlib_SDL_Window_conicalGradient(SpnValue *ret, int argc, SpnValue *
 }
 
 /////////////////////////////////
-//////   Just some paths   //////
+///////    Message Box    ///////
 /////////////////////////////////
 
-static const char *get_base_path(void)
-{
-	const char *base = SDL_GetBasePath();
-	return base ? base : "";
+static Uint32 get_messagebox_flag(const char *str) {
+	static const struct {
+		const char *name;
+		Uint32 flag;
+	} flags[] = {
+		{ "error",       SDL_MESSAGEBOX_ERROR       },
+		{ "warning",     SDL_MESSAGEBOX_WARNING     },
+		{ "information", SDL_MESSAGEBOX_INFORMATION },
+		{ "info",        SDL_MESSAGEBOX_INFORMATION }
+	};
+
+	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
+		if (strcmp(flags[i].name, str) == 0) {
+			return flags[i].flag;
+		}
+	}
+	// Defaults to error
+	return SDL_MESSAGEBOX_ERROR;
 }
 
-static const char *get_pref_path(const char *org, const char *app)
-{
-	const char *pref = NULL;
+static Uint32 get_messagebox_button_flag(const char *str) {
+	static const struct {
+		const char *name;
+		Uint32 flag;
+	} flags[] = {
+		{ "return", SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT },
+		{ "escape", SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT }
+	};
 
-	if (org != NULL && app != NULL) {
-		pref = SDL_GetPrefPath(org, app);
+	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
+		if (strcmp(flags[i].name, str) == 0) {
+			return flags[i].flag;
+		}
 	}
-
-	return pref ? pref : "";
+	// Defaults to 0
+	return 0;
 }
 
-static int spnlib_SDL_GetPaths(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static SDL_MessageBoxButtonData *get_messagebox_button_data
+(
+	SpnHashMap *hm,
+	int count
+)
 {
-	if (argc >= 2) {
-		CHECK_ARG_RETURN_ON_ERROR(0, string);
-		CHECK_ARG_RETURN_ON_ERROR(1, string);
+	SpnValue name, flag;
+	size_t cursor = 0, i = 0;
+	SDL_MessageBoxButtonData *buttondata = SDL_malloc(count * sizeof(SDL_MessageBoxButtonData));
+
+	while ((cursor = spn_hashmap_next(hm, cursor, &name, &flag)) != 0) {
+		buttondata[i].flags = get_messagebox_button_flag(spn_stringvalue(&flag)->cstr);
+		buttondata[i].buttonid = i;
+		buttondata[i].text = spn_stringvalue(&name)->cstr;
+		i++;
 	}
 
-	// construct return value: hashmap with strings
-	*ret = spn_makehashmap();
-	SpnHashMap *paths = spn_hashmapvalue(ret);
+	return buttondata;
+}
 
-	// get proper arguments for Pref, if given
-	const char *org = NULL, *app = NULL;
-	if (argc >= 2) {
-		org = STRARG(0);
-		app = STRARG(1);
+static SDL_MessageBoxData get_message_box_data
+(
+	Uint32 flags,
+	SDL_Window *window,
+	const char *title,
+	const char *message,
+	SpnHashMap *buttons
+)
+{
+	SDL_MessageBoxData data;
+
+	data.flags = flags;
+	data.window = window;
+	data.title = title;
+	data.message = message;
+	data.numbuttons = spn_hashmap_count(buttons);
+	data.buttons = get_messagebox_button_data(buttons, data.numbuttons);
+	data.colorScheme = NULL;
+
+	return data;
+}
+
+static int spnlib_SDL_Window_ShowMessageBox(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_ARG_RETURN_ON_ERROR(1, string);
+	CHECK_ARG_RETURN_ON_ERROR(2, string);
+	CHECK_ARG_RETURN_ON_ERROR(3, string);
+	if (argc > 4) {
+		CHECK_ARG_RETURN_ON_ERROR(4, hashmap);
 	}
 
-	SpnValue base = spn_makestring_nocopy(get_base_path());
-	SpnValue pref = spn_makestring_nocopy(get_pref_path(org, app));
+	SDL_MessageBoxData data;
+	int buttonid;
+	SpnHashMap *hm = HASHMAPARG(0);
+	spn_SDL_Window *window = window_from_hashmap(hm);
 
-	spn_hashmap_set_strkey(paths, "base", &base);
-	spn_hashmap_set_strkey(paths, "pref", &pref);
+	if (window == NULL) {
+		spn_ctx_runtime_error(ctx, "window object is invalid", NULL);
+		return -1;
+	}
 
-	spn_value_release(&base);
-	spn_value_release(&pref);
+	Uint32 flags = get_messagebox_flag(STRARG(1));
+	const char *title = STRARG(2);
+	const char *msg = STRARG(3);
+
+	if (argc == 4) {
+		SDL_ShowSimpleMessageBox(flags, title, msg, window->window);
+	} else {
+		data = get_message_box_data(flags, window->window, title, msg, HASHMAPARG(4));
+		SDL_ShowMessageBox(&data, &buttonid);
+
+		SDL_free(data.buttons);
+		*ret = spn_makeint(buttonid);
+	}
 
 	return 0;
 }
 
 //
-// Library initialization and deinitialization
+// Window methods hashmap creation
 //
 
-// the library has been loaded this many times
-static unsigned init_refcount = 0;
-
-// helper for building the hashmap representing the library
-static void spn_SDL_construct_library(void)
+void spnlib_SDL_Window_methods(SpnHashMap *window)
 {
-	assert(library == NULL);
-	library = spn_hashmap_new();
-
-	// top-level library functions
-	static const SpnExtFunc fns[] = {
-		{ "OpenWindow",  spnlib_SDL_OpenWindow   },
-		{ "PollEvent",   spnlib_SDL_PollEvent    },
-		{ "StartTimer",  spnlib_SDL_StartTimer   },
-		{ "StopTimer",   spnlib_SDL_StopTimer    },
-		{ "GetPaths",    spnlib_SDL_GetPaths     }
-	};
-
-	for (size_t i = 0; i < sizeof fns / sizeof fns[0]; i++) {
-		SpnValue fnval = spn_makenativefunc(fns[i].name, fns[i].fn);
-		spn_hashmap_set_strkey(library, fns[i].name, &fnval);
-		spn_value_release(&fnval);
-	}
-
-	// The Window class
-	SpnHashMap *window = spn_hashmap_new();
-
 	static const SpnExtFunc window_methods[] = {
 		{ "refresh",           spnlib_SDL_Window_refresh           },
 		{ "setBlendMode",      spnlib_SDL_Window_setBlendMode      },
@@ -1183,55 +1206,13 @@ static void spn_SDL_construct_library(void)
 		{ "loadImage",         spnlib_SDL_Window_loadImage         },
 		{ "linearGradient",    spnlib_SDL_Window_linearGradient    },
 		{ "radialGradient",    spnlib_SDL_Window_radialGradient    },
-		{ "conicalGradient",   spnlib_SDL_Window_conicalGradient   }
+		{ "conicalGradient",   spnlib_SDL_Window_conicalGradient   },
+		{ "showMessageBox",    spnlib_SDL_Window_ShowMessageBox    }
 	};
 
 	for (size_t i = 0; i < sizeof window_methods / sizeof window_methods[0]; i++) {
 		SpnValue fnval = spn_makenativefunc(window_methods[i].name, window_methods[i].fn);
 		spn_hashmap_set_strkey(window, window_methods[i].name, &fnval);
 		spn_value_release(&fnval);
-	}
-
-	spn_hashmap_set_strkey(
-		library,
-		"Window",
-		&(SpnValue){ .type = SPN_TYPE_HASHMAP, .v.o = window }
-	);
-	spn_object_release(window);
-}
-
-// when the last reference is gone to our library, we free the resources
-static void spn_SDL_destroy_library(void)
-{
-	assert(library);
-	spn_object_release(library);
-	library = NULL;
-}
-
-
-// Library constructor and destructor
-SPN_LIB_OPEN_FUNC(ctx) {
-	if (init_refcount == 0) {
-		if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-			fprintf(stderr, "can't initialize SDL: %s\n", SDL_GetError());
-			return spn_nilval;
-		}
-
-		spn_SDL_construct_library();
-	}
-
-	init_refcount++;
-
-	spn_object_retain(library);
-	return (SpnValue){ .type = SPN_TYPE_HASHMAP, .v.o = library };
-}
-
-SPN_LIB_CLOSE_FUNC(ctx) {
-	if (--init_refcount == 0) {
-		// free hashmap representing library
-		spn_SDL_destroy_library();
-
-		// deinitialize SDL
-		SDL_Quit();
 	}
 }
