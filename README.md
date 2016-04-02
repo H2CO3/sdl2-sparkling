@@ -30,7 +30,7 @@
         // 5.
     }
 
-Check out the Documentation, starting with [SDL.md](../tree/master/doc/SDL.md),
+Check out the Documentation, starting with [SDL.md](doc/SDL.md),
 on how to get started and for further reference.
 
 ## Installing
@@ -46,8 +46,8 @@ installation directory).
 
 For example code, see the Sparkling files:
 
-- [`example_docsig.spn`](../tree/master/examples/example_docsig.spn)
-- [`example_graph.spn`](../tree/master/examples/example_graph.spn)
-- [`demo_linear_gradient.spn`](../tree/master/examples/demo_linear_gradient.spn)
-- [`demo_radial_gradient.spn`](../tree/master/examples/demo_radial_gradient.spn)
-- [`demo_conical_gradient.spn`](../tree/master/examples/demo_conical_gradient.spn)
+- [`example_docsig.spn`](examples/example_docsig.spn)
+- [`example_graph.spn`](examples/example_graph.spn)
+- [`demo_linear_gradient.spn`](examples/demo_linear_gradient.spn)
+- [`demo_radial_gradient.spn`](examples/demo_radial_gradient.spn)
+- [`demo_conical_gradient.spn`](examples/demo_conical_gradient.spn)

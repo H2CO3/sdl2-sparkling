@@ -10,8 +10,8 @@ SDL2's bindings; in this case, you need to call `dynld()` in your script. Note
 that the argument does not require the file extension (as Sparkling will do that
 for you).
 
-Do note that, although these are theoretically "classes objects", they are still
-specifically crafted hashmaps.
+Do note that, although these are theoretically "classes objects", most are either
+specifically crafted hashmaps or strong userinfo objects.
 
 <!-- commity-comment -->
 
@@ -30,7 +30,7 @@ otherwise, returns nil.
 
 <!-- commity-comment -->
 
-    nil StartTimer(interval [, callback])
+    Timer StartTimer(interval [, callback])
 
 Sets up a timer on a background thread and returns the corresponding timer
 object. `interval` is to be specified in seconds (may be fractional).
