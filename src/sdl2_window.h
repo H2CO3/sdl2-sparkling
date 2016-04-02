@@ -17,7 +17,7 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 
 
-SPN_API int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
-SPN_API void spnlib_SDL_Window_methods(SpnHashMap *window);
+int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
+void spnlib_SDL_Window_methods(SpnHashMap *window);
 
 #endif

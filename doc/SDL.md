@@ -30,7 +30,7 @@ otherwise, returns nil.
 
 <!-- commity-comment -->
 
-    Timer StartTimer(interval [, callback])
+    Timer StartTimer(number interval [, function callback])
 
 Sets up a timer on a background thread and returns the corresponding timer
 object. `interval` is to be specified in seconds (may be fractional).
@@ -43,7 +43,7 @@ object is stopped. (so, if you want to keep the timer alive, you must
 hold a reference to the timer object, for example by storing it in a
 variable or a data structure.)
 
-    nil StopTimer(timer)
+    nil StopTimer(Timer timer)
 
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.

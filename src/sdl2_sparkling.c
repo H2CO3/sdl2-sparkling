@@ -27,7 +27,8 @@ static SpnHashMap *library = NULL;
 ////////  Window class  /////////
 /////////////////////////////////
 // This is required to let "Window" continue to act as a namespace
-SpnValue spn_get_window_prototype(void) {
+SpnValue spn_get_window_prototype(void)
+{
 	return spn_hashmap_get_strkey(library, "Window");
 }
 
