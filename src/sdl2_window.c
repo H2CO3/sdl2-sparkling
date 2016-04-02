@@ -1053,6 +1053,10 @@ static int spnlib_SDL_Window_conicalGradient(SpnValue *ret, int argc, SpnValue *
 	);
 }
 
+/////////////////////////////////
+///////    Message Box    ///////
+/////////////////////////////////
+
 static Uint32 get_messagebox_flag(const char *str) {
 	static const struct {
 		const char *name;
@@ -1173,6 +1177,7 @@ static int spnlib_SDL_Window_ShowMessageBox(SpnValue *ret, int argc, SpnValue *a
 //
 // Window methods hashmap creation
 //
+
 void spnlib_SDL_Window_methods(SpnHashMap *window)
 {
 	static const SpnExtFunc window_methods[] = {
