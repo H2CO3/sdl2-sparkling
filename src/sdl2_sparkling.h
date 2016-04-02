@@ -11,7 +11,11 @@
 #ifndef SPNLIB_SDL2_H
 #define SPNLIB_SDL2_H
 
+#include <assert.h>
+#include <stdbool.h>
+
 #include <spn/ctx.h>
+#include <spn/str.h>
 
 static inline void spnlib_sdl2_argindex_oob(int index, int argc, SpnContext *ctx)
 {
@@ -37,6 +41,9 @@ static inline void spnlib_sdl2_argtype_mismatch(
 		args
 	);
 }
+
+// Window helper
+SpnValue spn_get_window_prototype(void);
 
 // Macros for checking for certain types of arguments
 #define CHECK_ARG_RETURN_ON_ERROR(index, t)								\
