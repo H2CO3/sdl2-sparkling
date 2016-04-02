@@ -1187,9 +1187,8 @@ static SDL_MessageBoxButtonData *get_messagebox_button_data
 	return buttondata;
 }
 
-static void get_message_box_data
+static SDL_MessageBoxData get_message_box_data
 (
-	SDL_MessageBoxData *data,
 	Uint32 flags,
 	SDL_Window *window,
 	const char *title,
@@ -1197,13 +1196,17 @@ static void get_message_box_data
 	SpnHashMap *buttons
 )
 {
-	data->flags = flags;
-	data->window = window;
-	data->title = title;
-	data->message = message;
-	data->numbuttons = spn_hashmap_count(buttons);
-	data->buttons = get_messagebox_button_data(buttons, data->numbuttons);
-	data->colorScheme = NULL;
+	SDL_MessageBoxData data;
+
+	data.flags = flags;
+	data.window = window;
+	data.title = title;
+	data.message = message;
+	data.numbuttons = spn_hashmap_count(buttons);
+	data.buttons = get_messagebox_button_data(buttons, data.numbuttons);
+	data.colorScheme = NULL;
+
+	return data;
 }
 
 static int spnlib_SDL_Window_ShowMessageBox(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
@@ -1233,7 +1236,7 @@ static int spnlib_SDL_Window_ShowMessageBox(SpnValue *ret, int argc, SpnValue *a
 	if (argc == 4) {
 		SDL_ShowSimpleMessageBox(flags, title, msg, window->window);
 	} else {
-		get_message_box_data(&data, flags, window->window, title, msg, HASHMAPARG(4));
+		data = get_message_box_data(flags, window->window, title, msg, HASHMAPARG(4));
 		SDL_ShowMessageBox(&data, &buttonid);
 
 		SDL_free(data.buttons);
