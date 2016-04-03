@@ -8,7 +8,7 @@ has the following methods:
 Actually renders the backing memory buffer to the screen and updates
 the window. Don't call this in a tight loop! (only once per frame)
 
-    nil setColor(r, g, b, a)
+    nil setColor(number r, number g, number b, number a)
 
 Sets the current drawing color of the window in RGBA format. All
 parameters are floating-point numbers between 0 and 1.
@@ -18,7 +18,7 @@ parameters are floating-point numbers between 0 and 1.
 Returns a hashmap with keys `r`, `g`, `b`, `a`. The values are
 normalized ([0...1]) floating-point numbers.
 
-    nil setBlendMode(mode)
+    nil setBlendMode(string mode)
 
 Sets the current drawing blend mode in order to specify how the
 alpha channel is used. `mode` is one of SDL's four Blend Modes:
@@ -28,7 +28,7 @@ alpha channel is used. `mode` is one of SDL's four Blend Modes:
 
 Returns the name of the current blend mode.
 
-    nil setFont(name, ptsize, style)
+    nil setFont(string name, number ptsize, string style)
 
 Sets the active font for text rendering. `name` is the name of the font,
 it will be used for constructing the font file name to be loaded (by
@@ -68,7 +68,7 @@ angle start and end angle stop. Angles are measured in radians.
 Draw an ellipse with center point (x, y), horizontal semi-axis rx
 and vertical semi-axis ry.
 
-    nil fillPolygon(x1, coords)
+    nil fillPolygon(x1, array coords)
 
 Fills the polygon enclosed by the points at coordinates `(x1, y1)`,
 `(x2, y2)`, `(x3, y3)`, etc., where `x1, y1, x2, y2`, etc. are
@@ -81,7 +81,7 @@ At least 3 points (6 coordinates) must be specified.
 same as `strokeRect()` and `fillRect()`, except the corners of the
 rectangles will be rounded, with radius `r`.
 
-    nil bezier(steps, coords)
+    nil bezier(integer steps, array coords)
 
 Draws a Bezier curve through the specified points, using `steps` steps
 to interpolate between two consecutive points. `steps` must be at least
@@ -98,7 +98,7 @@ Draws a line starting at point (x, y), moving along the vector (dx, dy).
 
 Draw a single pixel at point (x, y)
 
-    nil renderText(text, hq)
+    Texture renderText(string text, boolean hq)
 
 Renders the string `text` using the current drawing color and current
 font. if `hq` is `true`, the rendering will be higher-quality but slower
@@ -108,7 +108,7 @@ resulting texture to the window, use `renderTexture()`.)
 This function raises a runtime error if currently there's no font set
 in the window.
 
-    nil textSize(text)
+    hashmap textSize(string text)
 
 Returns a hashmap with keys `width` and `height` which are integers
 specifying the size of the given `text` rendered using the current
@@ -116,16 +116,16 @@ font. (No actual rendering is done, only the computation of the
 font size is carried out using kerning.) Raises a runtime error if
 there's no font set in the window currently.
 
-    nil renderTexture(texture, x, y)
+    nil renderTexture(Texture texture, x, y)
 
 Blits the contents of `texture` at point `(x, y)` to the window.
 
-    nil loadImage(filename)
+    [ Image | nil ] loadImage(string filename)
 
 Loads the file at `filename` into memory. Returns the
 resulting texture object on success and `nil` on error.
 
-    nil linearGradient(w, h, dx, dy, colorStops)
+    nil linearGradient(w, h, dx, dy, array colorStops)
 
 Draws a linear gradient inside a rectangle of size `w * h`.
 and returns the resulting texture. `dx` and `dy` are components of the
@@ -145,8 +145,8 @@ linear gradient looks like:
 
 <!-- commity comment -->
 
-    nil radialGradient(rx, ry, colorStops)
-    nil conicalGradient(rx, ry, colorStops)
+    nil radialGradient(rx, ry, array colorStops)
+    nil conicalGradient(rx, ry, array colorStops)
 
 These functions draw a radial or conical gradient, respectively.
 `cx` and `cy` are the coordinates of the enclosing ellipse.
@@ -161,3 +161,22 @@ Here's an example of a radial gradient:
 And a conical one:
 
 ![conical gradient](../examples/conical_gradient.png)
+
+<!-- commity comment -->
+
+	[ int | nil ] showMessageBox(string flag, string title, string msg [, hashmap buttons])
+
+Shows a message box with the given data:
+
+* `flag` : Must be one of the following (failing to pick one defaults to `"error"`!):
+	- `"error"`
+	- `"warning"`
+	- `"information"` (also accepts `"info"`)
+* `title` : The title of the message box
+* `msg` : The message to display in the box
+* `buttons` : A hashmap where the key is the contents of the button, and the value
+must be one of the following:
+	- `"return"`, which defaults the Enter key to the corresponding button
+	- `"escape"`, which defaults the Esc key to the corresponding button
+
+<!-- commity comment -->

@@ -1,6 +1,6 @@
 SRCDIR = src
 
-INCLUDE = -I/usr/local/include #$(shell sdl2-config --cflags)
+INCLUDE = -I/usr/local/include $(shell sdl2-config --cflags)
 
 CFLAGS = -std=c99 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING $(INCLUDE)
 CXFLAGS = -std=c++11 -c -pedantic -O3 -flto -Wall -DUSE_DYNAMIC_LOADING $(INCLUDE)
@@ -10,9 +10,9 @@ LDFLAGS = -L/usr/local/lib/            \
 		  -O3                          \
 		  -flto                        \
 		  -lspn                        \
-		  -lsdl2_gfx                   \
-		  -lsdl2_ttf                   \
-		  -lsdl2_image
+		  -lSDL2_gfx                   \
+		  -lSDL2_ttf                   \
+		  -lSDL2_image
 
 ifeq ($(shell uname), Darwin)
 	CC = clang

@@ -38,8 +38,8 @@ on how to get started and for further reference.
 First things first, make sure that [Sparkling](https://github.com/H2CO3/Sparkling)
 is installed.
 Then, compile this with `make` (no extra flags are necessary).  
-Finally, you must place the resulting `.dylib` file in the same directory as
-`libspn.dylib`, which should be `/usr/local/lib` (unless you specified another
+Finally, you must place the resulting library file in the same directory as
+`libspn`, which should be `/usr/local/lib` (unless you specified another
 installation directory).
 
 ## Examples

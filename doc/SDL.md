@@ -30,7 +30,7 @@ otherwise, returns nil.
 
 <!-- commity-comment -->
 
-    Timer StartTimer(interval [, callback])
+    Timer StartTimer(number interval [, function callback])
 
 Sets up a timer on a background thread and returns the corresponding timer
 object. `interval` is to be specified in seconds (may be fractional).
@@ -43,12 +43,15 @@ object is stopped. (so, if you want to keep the timer alive, you must
 hold a reference to the timer object, for example by storing it in a
 variable or a data structure.)
 
-    nil StopTimer(timer)
+    nil StopTimer(Timer timer)
 
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.
 
-<!-- commity-comment -->
+### Extras
+
+These are additional functionalities that don't really fit anywhere and don't
+have enough criteria to be considered classes.
 
     hashmap GetPaths([string organization, string app])
 
@@ -64,3 +67,33 @@ your script.
 If `pref` contains an empty string, either the given arguments aren't
 correct (or given at all), or the current platform does not support
 this feature.
+
+    hashmap GetVersion()
+
+Returns a hashmap with the following keys:
+
+* `major` : major revision (increments with massive changes, additions, and enhancements)
+* `minor` : minor revision (increments with backwards-compatible changes to the major revision)
+* `patch` : patch-level (increments with fixes to the minor revision)
+
+<!-- commity-comment -->
+
+	string GetPlatform()
+
+Returns a string with the current platform's name.
+
+    hashmap GetCPUSpecs()
+
+Returns a hashmap with all the data on the CPU features that SDL can detect.
+A few remarks:
+
+* `cores` corresponds to the number of *logical* cores
+* `cache` is in kB
+* `ram` is in MB
+
+<!-- commity-comment -->
+
+    hashmap GetPowerInfo()
+
+Tells information on the running computer's power with percentage, seconds of
+battery life left and a string with the state of the battery.

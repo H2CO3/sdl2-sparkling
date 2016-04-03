@@ -16,6 +16,7 @@
 #include "sdl2_window.h"
 #include "sdl2_event.h"
 #include "sdl2_timer.h"
+#include "sdl2_extras.h"
 
 
 /////////////////////////////////
@@ -27,58 +28,9 @@ static SpnHashMap *library = NULL;
 ////////  Window class  /////////
 /////////////////////////////////
 // This is required to let "Window" continue to act as a namespace
-SpnValue spn_get_window_prototype(void) {
+SpnValue spn_get_window_prototype(void)
+{
 	return spn_hashmap_get_strkey(library, "Window");
-}
-
-/////////////////////////////////
-//////   Just some paths   //////
-/////////////////////////////////
-static const char *get_base_path(void)
-{
-	const char *base = SDL_GetBasePath();
-	return base ? base : "";
-}
-
-static const char *get_pref_path(const char *org, const char *app)
-{
-	const char *pref = NULL;
-
-	if (org != NULL && app != NULL) {
-		pref = SDL_GetPrefPath(org, app);
-	}
-
-	return pref ? pref : "";
-}
-
-static int spnlib_SDL_GetPaths(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
-{
-	if (argc >= 2) {
-		CHECK_ARG_RETURN_ON_ERROR(0, string);
-		CHECK_ARG_RETURN_ON_ERROR(1, string);
-	}
-
-	// construct return value: hashmap with strings
-	*ret = spn_makehashmap();
-	SpnHashMap *paths = spn_hashmapvalue(ret);
-
-	// get proper arguments for Pref, if given
-	const char *org = NULL, *app = NULL;
-	if (argc >= 2) {
-		org = STRARG(0);
-		app = STRARG(1);
-	}
-
-	SpnValue base = spn_makestring_nocopy(get_base_path());
-	SpnValue pref = spn_makestring_nocopy(get_pref_path(org, app));
-
-	spn_hashmap_set_strkey(paths, "base", &base);
-	spn_hashmap_set_strkey(paths, "pref", &pref);
-
-	spn_value_release(&base);
-	spn_value_release(&pref);
-
-	return 0;
 }
 
 //
@@ -96,11 +48,15 @@ static void spn_SDL_construct_library(void)
 
 	// top-level library functions
 	static const SpnExtFunc fns[] = {
-		{ "OpenWindow",  spnlib_SDL_OpenWindow   },
-		{ "PollEvent",   spnlib_SDL_PollEvent    },
-		{ "StartTimer",  spnlib_SDL_StartTimer   },
-		{ "StopTimer",   spnlib_SDL_StopTimer    },
-		{ "GetPaths",    spnlib_SDL_GetPaths     }
+		{ "OpenWindow",   spnlib_SDL_OpenWindow   },
+		{ "PollEvent",    spnlib_SDL_PollEvent    },
+		{ "StartTimer",   spnlib_SDL_StartTimer   },
+		{ "StopTimer",    spnlib_SDL_StopTimer    },
+		{ "GetPaths",     spnlib_SDL_GetPaths     },
+		{ "GetVersion",   spnlib_SDL_GetVersion   },
+		{ "GetPlatform",  spnlib_SDL_GetPlatform  },
+		{ "GetCPUSpecs",  spnlib_SDL_GetCPUSpecs  },
+		{ "GetPowerInfo", spnlib_SDL_GetPowerInfo }
 	};
 
 	for (size_t i = 0; i < sizeof fns / sizeof fns[0]; i++) {
