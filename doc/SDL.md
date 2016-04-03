@@ -48,7 +48,10 @@ variable or a data structure.)
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.
 
-<!-- commity-comment -->
+### Extras
+
+These are additional functionalities that don't really fit anywhere and don't
+have enough criteria to be considered classes.
 
     hashmap GetPaths([string organization, string app])
 
@@ -64,3 +67,27 @@ your script.
 If `pref` contains an empty string, either the given arguments aren't
 correct (or given at all), or the current platform does not support
 this feature.
+
+    hashmap GetVersion()
+
+Returns a hashmap with the following keys:
+
+* `major` : major revision (increments with massive changes, additions, and enhancements)
+* `minor` : minor revision (increments with backwards-compatible changes to the major revision)
+* `patch` : patch-level (increments with fixes to the minor revision)
+
+<!-- commity-comment -->
+
+	string GetPlatform()
+
+Returns a string with the current platform's name.
+
+    hashmap GetCPUSpecs()
+
+Returns a hashmap with all the data on the CPU features that SDL can detect.
+
+    hashmap GetPowerInfo()
+
+Tells information on the running computer's power (e.g. if the battery is charged)
+with percentage, seconds of battery life left and a string with the state of
+the battery.
