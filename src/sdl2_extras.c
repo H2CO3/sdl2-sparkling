@@ -91,10 +91,8 @@ int spnlib_SDL_GetVersion(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 ////    Platform and CPU    /////
 /////////////////////////////////
 int spnlib_SDL_GetPlatform(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
-{
-	// Simplest function to bind
+{	// Simplest function to bind
 	*ret = spn_makestring_nocopy(SDL_GetPlatform());
-
 	return 0;
 }
 
@@ -121,20 +119,20 @@ int spnlib_SDL_GetCPUSpecs(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	SpnValue sse42 = SPN_SDLBOOL(SDL_HasSSE42());
 
 	// Assembling all this mess
-	spn_hashmap_set_strkey(cpu_features, "Cache (KB)", &cache);
-	spn_hashmap_set_strkey(cpu_features, "Locical Cores", &cores);
-	spn_hashmap_set_strkey(cpu_features, "RAM (MB)", &ram);
-	spn_hashmap_set_strkey(cpu_features, "3DNow", &now3d);
-	spn_hashmap_set_strkey(cpu_features, "AVX", &avx);
-	spn_hashmap_set_strkey(cpu_features, "AVX2", &avx2);
-	spn_hashmap_set_strkey(cpu_features, "AltiVec", &altivec);
-	spn_hashmap_set_strkey(cpu_features, "MMX", &mmx);
-	spn_hashmap_set_strkey(cpu_features, "RDTSC", &rdtsc);
-	spn_hashmap_set_strkey(cpu_features, "SSE", &sse);
-	spn_hashmap_set_strkey(cpu_features, "SSE2", &sse2);
-	spn_hashmap_set_strkey(cpu_features, "SSE3", &sse3);
-	spn_hashmap_set_strkey(cpu_features, "SSE41", &sse41);
-	spn_hashmap_set_strkey(cpu_features, "SSE42", &sse42);
+	spn_hashmap_set_strkey(cpu_features, "cache", &cache);
+	spn_hashmap_set_strkey(cpu_features, "cores", &cores);
+	spn_hashmap_set_strkey(cpu_features, "ram", &ram);
+	spn_hashmap_set_strkey(cpu_features, "3dnow", &now3d);
+	spn_hashmap_set_strkey(cpu_features, "avx", &avx);
+	spn_hashmap_set_strkey(cpu_features, "avx2", &avx2);
+	spn_hashmap_set_strkey(cpu_features, "altivec", &altivec);
+	spn_hashmap_set_strkey(cpu_features, "mmx", &mmx);
+	spn_hashmap_set_strkey(cpu_features, "rdtsc", &rdtsc);
+	spn_hashmap_set_strkey(cpu_features, "sse", &sse);
+	spn_hashmap_set_strkey(cpu_features, "sse2", &sse2);
+	spn_hashmap_set_strkey(cpu_features, "sse3", &sse3);
+	spn_hashmap_set_strkey(cpu_features, "sse41", &sse41);
+	spn_hashmap_set_strkey(cpu_features, "sse42", &sse42);
 
 	spn_value_release(&cache);
 	spn_value_release(&cores);
@@ -168,7 +166,7 @@ static const char *powerstate_to_string(SDL_PowerState state)
 			return "plugged in, charging battery";
 		case SDL_POWERSTATE_CHARGED:
 			return "plugged in, battery charged";
-		case SDL_POWERSTATE_UNKNOWN:
+		case SDL_POWERSTATE_UNKNOWN: // FALLTHRU
 		default:
 			return "cannot determine power status";
 	}

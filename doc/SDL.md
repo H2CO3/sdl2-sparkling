@@ -85,6 +85,13 @@ Returns a string with the current platform's name.
     hashmap GetCPUSpecs()
 
 Returns a hashmap with all the data on the CPU features that SDL can detect.
+A few remarks:
+
+* `cores` corresponds to the number of *logical* cores
+* `cache` is in kB
+* `ram` is in MB
+
+<!-- commity-comment -->
 
     hashmap GetPowerInfo()
 
