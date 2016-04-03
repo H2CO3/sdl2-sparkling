@@ -88,6 +88,5 @@ Returns a hashmap with all the data on the CPU features that SDL can detect.
 
     hashmap GetPowerInfo()
 
-Tells information on the running computer's power (e.g. if the battery is charged)
-with percentage, seconds of battery life left and a string with the state of
-the battery.
+Tells information on the running computer's power with percentage, seconds of
+battery life left and a string with the state of the battery.
