@@ -161,3 +161,22 @@ Here's an example of a radial gradient:
 And a conical one:
 
 ![conical gradient](../examples/conical_gradient.png)
+
+<!-- commity comment -->
+
+	[ int | nil ] showMessageBox(string flag, string title, string msg [, hashmap buttons])
+
+Shows a message box with the given data:
+
+* `flag` : Must be one of the following (failing to pick one defaults to `"error"`!):
+	- `"error"`
+	- `"warning"`
+	- `"information"` (also accepts `"info"`)
+* `title` : The title of the message box
+* `msg` : The message to display in the box
+* `buttons` : A hashmap where the key is the contents of the button, and the value
+must be one of the following:
+	- `"return"`, which defaults the Enter key to the corresponding button
+	- `"escape"`, which defaults the Esc key to the corresponding button
+
+<!-- commity comment -->
