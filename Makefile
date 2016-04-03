@@ -10,9 +10,9 @@ LDFLAGS = -L/usr/local/lib/            \
 		  -O3                          \
 		  -flto                        \
 		  -lspn                        \
-		  -lsdl2_gfx                   \
-		  -lsdl2_ttf                   \
-		  -lsdl2_image
+		  -lSDL2_gfx                   \
+		  -lSDL2_ttf                   \
+		  -lSDL2_image
 
 ifeq ($(shell uname), Darwin)
 	CC = clang
