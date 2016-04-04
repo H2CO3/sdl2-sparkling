@@ -158,17 +158,12 @@ int spnlib_SDL_GetCPUSpecs(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 static const char *powerstate_to_string(SDL_PowerState state)
 {
 	switch (state) {
-		case SDL_POWERSTATE_ON_BATTERY:
-			return "not plugged in, running on the battery";
-		case SDL_POWERSTATE_NO_BATTERY:
-			return "plugged in, no battery available";
-		case SDL_POWERSTATE_CHARGING:
-			return "plugged in, charging battery";
-		case SDL_POWERSTATE_CHARGED:
-			return "plugged in, battery charged";
-		case SDL_POWERSTATE_UNKNOWN: // FALLTHRU
-		default:
-			return "cannot determine power status";
+	case SDL_POWERSTATE_ON_BATTERY: return "not plugged in, running on the battery";
+	case SDL_POWERSTATE_NO_BATTERY: return "plugged in, no battery available";
+	case SDL_POWERSTATE_CHARGING:   return "plugged in, charging battery";
+	case SDL_POWERSTATE_CHARGED:    return "plugged in, battery charged";
+	case SDL_POWERSTATE_UNKNOWN: // FALLTHRU
+	default:                        return "cannot determine power status";
 	}
 }
 
