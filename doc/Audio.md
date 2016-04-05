@@ -4,11 +4,15 @@ Programming with Audio is considerably frustrating since it requires passing
 around a lot of binary data, pointers and audio values.
 
 Fear not: the combination of SDL's abstraction and Sparkling's convenience
-*will* deliver!
+*shall* deliver!
 
 	nil close()
 
 Closes the selected audio device.
+
+	string getStatus()
+
+Returns the audio device's current status.
 
 ## AudioSpec
 

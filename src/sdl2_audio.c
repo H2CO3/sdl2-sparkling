@@ -120,19 +120,19 @@ static SDL_AudioSpec get_audiospec_from_arg(SpnArray *arr)
 	SDL_memset(&ret, 0, sizeof(ret));
 
 	SpnValue val;
-	// 1. int freq
+	// 1. freq : int
 	val          = spn_array_get(arr, 0);
 	ret.freq     = spn_intvalue_f(&val);
 	spn_value_release(&val);
-	// 2. SDL_AudioFormat format
+	// 2. format : SDL_AudioFormat
 	val          = spn_array_get(arr, 1);
 	ret.format   = get_audioformat_value(spn_stringvalue(&val)->cstr);
 	spn_value_release(&val);
-	// 3. Uint8 channels
+	// 3. channels : Uint8
 	val          = spn_array_get(arr, 2);
 	ret.channels = spn_intvalue_f(&val);
 	spn_value_release(&val);
-	// 4. Uint16 samples
+	// 4. samples : Uint16
 	val          = spn_array_get(arr, 3);
 	ret.samples  = spn_intvalue_f(&val);
 	spn_value_release(&val);
@@ -140,7 +140,7 @@ static SDL_AudioSpec get_audiospec_from_arg(SpnArray *arr)
 	return ret;
 }
 
-static const char *channel_to_string(Uint8 channel)
+static const char *get_channel_string(Uint8 channel)
 {
 	switch (channel) {
 	case 1:  return "mono";
@@ -157,19 +157,19 @@ static void fill_hashmap_with_obtained_audiospec(SpnHashMap *hm, SDL_AudioSpec *
 {
 	SpnValue val;
 
-	// 1. int freq
+	// 1. freq : int
 	val = spn_makeint(spec->freq);
 	spn_hashmap_set_strkey(hm, "freq", &val);
 	spn_value_release(&val);
-	// 2. string format
+	// 2. format : string
 	val = spn_makestring_nocopy(get_audioformat_string(spec->format));
 	spn_hashmap_set_strkey(hm, "format", &val);
 	spn_value_release(&val);
-	// 3. string channels
-	val = spn_makestring_nocopy(channel_to_string(spec->channels));
-	spn_hashmap_set_strkey(hm, "channel", &val);
+	// 3. channels : string
+	val = spn_makestring_nocopy(get_channel_string(spec->channels));
+	spn_hashmap_set_strkey(hm, "channels", &val);
 	spn_value_release(&val);
-	// 4. int samples
+	// 4. samples : int
 	val = spn_makeint(spec->samples);
 	spn_hashmap_set_strkey(hm, "sample", &val);
 	spn_value_release(&val);

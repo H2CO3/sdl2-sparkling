@@ -53,13 +53,15 @@ descriptor object returned by `StartTimer()`.
 	Audio OpenAudioDevice(array spec [, string device_name])
 
 Handing a carefully crafted array `spec` (which is akin to SDL's AudioSpec)
-to this function will return you an Audio Device object.
+to this function will return you an Audio Device object.  
+If you do not hand it the name of a device, SDL will request the most reasonable
+default.  
 [Check Audio.md for more info](./Audio.md#audiospec).
 
 	array ListAudioDevices()
 
-Lists all of the available device names. You can pick one and open it with
-`OpenAudioDevice()`.
+Lists all of the available device names into an array. You can pick one and
+open it with `OpenAudioDevice()`.
 
 
 ### Extras
