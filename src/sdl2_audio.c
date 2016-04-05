@@ -110,14 +110,14 @@ static SDL_AudioFormat get_audioformat_value(const char *name)
 		}
 	}
 
-	return 0;
+	SHANT_BE_REACHED();
 }
 
 // TODO: support callback feature in SDL_AudioSpec
 static SDL_AudioSpec get_audiospec_from_arg(SpnArray *arr)
 {
 	SDL_AudioSpec ret;
-	SDL_memset(&ret, 0, sizeof(ret));
+	SDL_zero(ret);
 
 	SpnValue val;
 	// 1. freq : int
@@ -230,8 +230,11 @@ int spnlib_SDL_ListAudioDevices(SpnValue *ret, int argc, SpnValue *argv, void *c
 	int count = SDL_GetNumAudioDevices(0);
 	for (int i = 0; i < count; i++) {
 		const char *name = SDL_GetAudioDeviceName(i, 0);
-		SpnValue device = spn_makestring_nocopy(name);
-		spn_array_push(arr, &device);
+		if (name) {
+			SpnValue device = spn_makestring(name);
+			spn_array_push(arr, &device);
+			spn_value_release(&device);
+		}
 	}
 
 	return 0;
@@ -264,10 +267,10 @@ static int spnlib_SDL_Audio_close(SpnValue *ret, int argc, SpnValue *argv, void 
 static const char *get_audio_device_status(int device)
 {
 	switch (SDL_GetAudioDeviceStatus(device)) {
-    case SDL_AUDIO_STOPPED: return "stopped\n";
-    case SDL_AUDIO_PLAYING: return "playing\n";
-    case SDL_AUDIO_PAUSED:  return "paused\n";
-    default:                return "unknown\n";
+    case SDL_AUDIO_STOPPED: return "stopped";
+    case SDL_AUDIO_PLAYING: return "playing";
+    case SDL_AUDIO_PAUSED:  return "paused";
+    default:                return "unknown";
     }
 }
 

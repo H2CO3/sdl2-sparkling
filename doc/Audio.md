@@ -45,6 +45,9 @@ of the following (considering the left column is a string):
 | FS32    | 32-bit floating point samples in little-endian byte order        |
 | FS32MSB | 32-bit floating point samples in big-endian byte order           |
 
+*Note*: if you miswrite the format string, the program will halt so that no
+later problems come if an incorrect format were to be picked.
+
 \#3 - **channels** specifies the number of output channels.
 Supported values are 1 (mono), 2 (stereo), 4 (quad), and 6 (5.1).
 
