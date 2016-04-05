@@ -17,6 +17,7 @@
 #include "sdl2_event.h"
 #include "sdl2_timer.h"
 #include "sdl2_extras.h"
+#include "sdl2_audio.h"
 
 
 /////////////////////////////////
@@ -25,13 +26,23 @@
 static SpnHashMap *library = NULL;
 
 /////////////////////////////////
-////////  Window class  /////////
+////////  Prototyping  //////////
 /////////////////////////////////
-// This is required to let "Window" continue to act as a namespace
-SpnValue spn_get_window_prototype(void)
+// This is necessary to let a certain class continue to act as a namespace
+SpnValue spn_get_lib_prototype(const char *classname)
 {
-	return spn_hashmap_get_strkey(library, "Window");
+	return spn_hashmap_get_strkey(library, classname);
 }
+
+#define SPN_LIB_CREATE_NAMESPACE(class)                    \
+	hm = spn_hashmap_new();                    \
+	spnlib_SDL_methods_for_##class(hm);                    \
+	spn_hashmap_set_strkey(                                \
+		library,                                           \
+		#class,                                            \
+		&(SpnValue){ .type = SPN_TYPE_HASHMAP, .v.o = hm } \
+	);                                                     \
+	spn_object_release(hm)
 
 //
 // Library initialization and deinitialization
@@ -48,15 +59,17 @@ static void spn_SDL_construct_library(void)
 
 	// top-level library functions
 	static const SpnExtFunc fns[] = {
-		{ "OpenWindow",   spnlib_SDL_OpenWindow   },
-		{ "PollEvent",    spnlib_SDL_PollEvent    },
-		{ "StartTimer",   spnlib_SDL_StartTimer   },
-		{ "StopTimer",    spnlib_SDL_StopTimer    },
-		{ "GetPaths",     spnlib_SDL_GetPaths     },
-		{ "GetVersion",   spnlib_SDL_GetVersion   },
-		{ "GetPlatform",  spnlib_SDL_GetPlatform  },
-		{ "GetCPUSpecs",  spnlib_SDL_GetCPUSpecs  },
-		{ "GetPowerInfo", spnlib_SDL_GetPowerInfo }
+		{ "OpenWindow",       spnlib_SDL_OpenWindow       },
+		{ "PollEvent",        spnlib_SDL_PollEvent        },
+		{ "StartTimer",       spnlib_SDL_StartTimer       },
+		{ "StopTimer",        spnlib_SDL_StopTimer        },
+		{ "OpenAudioDevice",  spnlib_SDL_OpenAudioDevice  },
+		{ "ListAudioDevices", spnlib_SDL_ListAudioDevices },
+		{ "GetPaths",         spnlib_SDL_GetPaths         },
+		{ "GetVersion",       spnlib_SDL_GetVersion       },
+		{ "GetPlatform",      spnlib_SDL_GetPlatform      },
+		{ "GetCPUSpecs",      spnlib_SDL_GetCPUSpecs      },
+		{ "GetPowerInfo",     spnlib_SDL_GetPowerInfo     }
 	};
 
 	for (size_t i = 0; i < sizeof fns / sizeof fns[0]; i++) {
@@ -65,14 +78,9 @@ static void spn_SDL_construct_library(void)
 		spn_value_release(&fnval);
 	}
 
-	SpnHashMap *window = spn_hashmap_new();
-	spnlib_SDL_Window_methods(window);
-	spn_hashmap_set_strkey(
-		library,
-		"Window",
-		&(SpnValue){ .type = SPN_TYPE_HASHMAP, .v.o = window }
-	);
-	spn_object_release(window);
+	SpnHashMap *hm;
+	SPN_LIB_CREATE_NAMESPACE(Window);
+	SPN_LIB_CREATE_NAMESPACE(Audio);
 }
 
 // when the last reference is gone to our library, we free the resources

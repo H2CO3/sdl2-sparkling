@@ -13,7 +13,7 @@ for you).
 Do note that, although these are theoretically "classes objects", most are either
 specifically crafted hashmaps or strong userinfo objects.
 
-<!-- commity-comment -->
+## Window class
 
     Window OpenWindow(string title [, integer width, integer height])
 
@@ -28,7 +28,7 @@ object is an integer ID used throughout the event system.
 Returns an event object if there are any pending events to handle;
 otherwise, returns nil.
 
-<!-- commity-comment -->
+## Timer class
 
     Timer StartTimer(number interval [, function callback])
 
@@ -47,6 +47,20 @@ variable or a data structure.)
 
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.
+
+## Audio class
+
+	Audio OpenAudioDevice(array spec [, string device_name])
+
+Handing a carefully crafted array `spec` (which is akin to SDL's AudioSpec)
+to this function will return you an Audio Device object.
+[Check Audio.md for more info](./Audio.md#audiospec).
+
+	array ListAudioDevices()
+
+Lists all of the available device names. You can pick one and open it with
+`OpenAudioDevice()`.
+
 
 ### Extras
 

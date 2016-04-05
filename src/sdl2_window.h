@@ -18,6 +18,8 @@
 
 
 int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
-void spnlib_SDL_Window_methods(SpnHashMap *window);
+
+// In order to bridge data between sdl2_sparkling.c and this file
+void spnlib_SDL_methods_for_Window(SpnHashMap *window);
 
 #endif

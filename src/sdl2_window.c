@@ -87,7 +87,7 @@ int spnlib_SDL_OpenWindow(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	SpnHashMap *hm = spn_hashmapvalue(ret);
 
 	// set its prototype
-	SpnValue proto = spn_get_window_prototype();
+	SpnValue proto = spn_get_lib_prototype("Window");
 	spn_hashmap_set_strkey(hm, "super", &proto);
 
 	// actually open window
@@ -174,15 +174,7 @@ static int spnlib_SDL_Window_clear(SpnValue *ret, int argc, SpnValue *argv, void
 // Constrain a floating-point value to the [0...1] closed interval.
 static double constrain_to_01(double x)
 {
-	if (x < 0) {
-		return 0;
-	}
-
-	if (x > 1) {
-		return 1;
-	}
-
-	return x;
+	return x < 1 ? x < 0 ? 0 : x : 1;
 }
 
 // Returns the SDL_BlendMode corresponding to the given string
@@ -1178,9 +1170,9 @@ static int spnlib_SDL_Window_ShowMessageBox(SpnValue *ret, int argc, SpnValue *a
 // Window methods hashmap creation
 //
 
-void spnlib_SDL_Window_methods(SpnHashMap *window)
+void spnlib_SDL_methods_for_Window(SpnHashMap *window)
 {
-	static const SpnExtFunc window_methods[] = {
+	static const SpnExtFunc methods[] = {
 		{ "refresh",           spnlib_SDL_Window_refresh           },
 		{ "setBlendMode",      spnlib_SDL_Window_setBlendMode      },
 		{ "getBlendMode",      spnlib_SDL_Window_getBlendMode      },
@@ -1210,9 +1202,9 @@ void spnlib_SDL_Window_methods(SpnHashMap *window)
 		{ "showMessageBox",    spnlib_SDL_Window_ShowMessageBox    }
 	};
 
-	for (size_t i = 0; i < sizeof window_methods / sizeof window_methods[0]; i++) {
-		SpnValue fnval = spn_makenativefunc(window_methods[i].name, window_methods[i].fn);
-		spn_hashmap_set_strkey(window, window_methods[i].name, &fnval);
+	for (size_t i = 0; i < sizeof methods / sizeof methods[0]; i++) {
+		SpnValue fnval = spn_makenativefunc(methods[i].name, methods[i].fn);
+		spn_hashmap_set_strkey(window, methods[i].name, &fnval);
 		spn_value_release(&fnval);
 	}
 }
