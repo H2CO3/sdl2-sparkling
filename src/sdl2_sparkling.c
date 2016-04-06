@@ -80,7 +80,7 @@ static void spn_SDL_construct_library(void)
 
 	SpnHashMap *hm;
 	SPN_LIB_CREATE_NAMESPACE(Window);
-	SPN_LIB_CREATE_NAMESPACE(Audio);
+	SPN_LIB_CREATE_NAMESPACE(AudioDevice);
 }
 
 // when the last reference is gone to our library, we free the resources

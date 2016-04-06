@@ -21,6 +21,6 @@ int spnlib_SDL_OpenAudioDevice(SpnValue *ret, int argc, SpnValue *argv, void *ct
 int spnlib_SDL_ListAudioDevices(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
 
 // In order to bridge data between sdl2_sparkling.c and this file
-void spnlib_SDL_methods_for_Audio(SpnHashMap *audio);
+void spnlib_SDL_methods_for_AudioDevice(SpnHashMap *audio);
 
 #endif // SPNLIB_SDL2_AUDIO_H

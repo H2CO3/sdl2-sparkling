@@ -48,9 +48,9 @@ variable or a data structure.)
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.
 
-## Audio class
+## AudioDevice class
 
-	Audio OpenAudioDevice(array spec [, string device_name])
+	AudioDevice OpenAudioDevice(array spec [, string device_name])
 
 Handing a carefully crafted array `spec` (which is akin to SDL's AudioSpec)
 to this function will return you an Audio Device object.  

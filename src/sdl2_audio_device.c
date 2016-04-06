@@ -8,36 +8,40 @@
 // Licensed under the 2-clause BSD License
 //
 
-#include "sdl2_audio.h"
+#include "sdl2_audio_device.h"
 #include "sdl2_sparkling.h"
 
-typedef struct spn_SDL_Audio {
+
+/////////////////////////////////
+//  SDL Audio class structure  //
+/////////////////////////////////
+typedef struct spn_SDL_AudioDevice {
 	SpnObject base;
 	SDL_AudioDeviceID ID;
 	SDL_AudioSpec spec;
-	Uint8 *wav_buffer;
-} spn_SDL_Audio;
+} spn_SDL_AudioDevice;
 
 
-static void spn_SDL_Audio_dtor(void *obj)
+static void spn_SDL_AudioDevice_dtor(void *obj)
 {
-	spn_SDL_Audio *device = obj;
-	SDL_FreeWAV(device->wav_buffer);
+	spn_SDL_AudioDevice *device = obj;
+
 	SDL_CloseAudioDevice(device->ID);
+	device->ID = 0;
 }
 
-// A simple RAII class for managing SDL_Texture objects
-const SpnClass spn_SDL_Audio_class = {
-	sizeof(spn_SDL_Audio),
+// A simple RAII class for managing SDL_AudioDevice objects
+const SpnClass spn_SDL_AudioDevice_class = {
+	sizeof(spn_SDL_AudioDevice),
 	SPN_SDL_CLASS_UID_AUDIO,
 	NULL,
 	NULL,
 	NULL,
-	spn_SDL_Audio_dtor
+	spn_SDL_AudioDevice_dtor
 };
 
 // Retrieves an internal audio descriptor from a "public" audio object
-spn_SDL_Audio *audio_from_hashmap(SpnHashMap *hm)
+spn_SDL_AudioDevice *audio_device_from_hashmap(SpnHashMap *hm)
 {
 	SpnValue objv = spn_hashmap_get_strkey(hm, "device");
 
@@ -45,28 +49,27 @@ spn_SDL_Audio *audio_from_hashmap(SpnHashMap *hm)
 		return NULL;
 	}
 
-	spn_SDL_Audio *audio = spn_objvalue(&objv);
+	spn_SDL_AudioDevice *device = spn_objvalue(&objv);
 
-	if (!spn_object_member_of_class(audio, &spn_SDL_Audio_class)) {
+	if (!spn_object_member_of_class(device, &spn_SDL_AudioDevice_class)) {
 		return NULL;
 	}
 
-	return audio;
+	return device;
 }
 
 #define CHECK_FOR_AUDIO_HASHMAP()                                      \
 	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);                             \
 	SpnHashMap *hm = HASHMAPARG(0);                                    \
-	spn_SDL_Audio *device = audio_from_hashmap(hm);                     \
+	spn_SDL_AudioDevice *device = audio_device_from_hashmap(hm);                     \
 	if (device == NULL) {                                               \
 		spn_ctx_runtime_error(ctx, "audio object is invalid", NULL);   \
 		return -1;                                                     \
 	}
 
-//
-// Audio Class construction materials
-//
-
+/////////////////////////////////
+//    Audio Class materials    //
+/////////////////////////////////
 static const char *get_audioformat_string(SDL_AudioFormat fmt)
 {
 	switch (fmt) {
@@ -170,7 +173,7 @@ static const char *get_channel_string(Uint8 channel)
 static void fill_hashmap_with_obtained_audiospec(SpnHashMap *hm)
 {
 	SpnValue val;
-	spn_SDL_Audio *device = audio_from_hashmap(hm);
+	spn_SDL_AudioDevice *device = audio_device_from_hashmap(hm);
 	SDL_AudioSpec *spec = &device->spec;
 
 	// 1. freq : int
@@ -191,14 +194,14 @@ static void fill_hashmap_with_obtained_audiospec(SpnHashMap *hm)
 	spn_value_release(&val);
 }
 
-//
-// Initialize Audio Class
-//
+/////////////////////////////////
+//    Initialize Audio Class   //
+/////////////////////////////////
 // FIXME: As soon as SDL supports recording, `iscapture` shall be considered in
 // FIXME: the argv. Until then, `iscapture` = 0
-static SpnValue spnlib_SDL_Audio_new(const char *name, SDL_AudioSpec *want)
+static SpnValue spnlib_SDL_AudioDevice_new(const char *name, SDL_AudioSpec *want)
 {
-	spn_SDL_Audio *obj = spn_object_new(&spn_SDL_Audio_class);
+	spn_SDL_AudioDevice *obj = spn_object_new(&spn_SDL_AudioDevice_class);
 	obj->ID = SDL_OpenAudioDevice(name, 0, want, &obj->spec, 0);
 	return spn_makestrguserinfo(obj);
 }
@@ -223,7 +226,7 @@ int spnlib_SDL_OpenAudioDevice(SpnValue *ret, int argc, SpnValue *argv, void *ct
 	const char *name = argc == 2 ? STRARG(1) : NULL;
 
 	// create device object
-	SpnValue device = spnlib_SDL_Audio_new(name, &want);
+	SpnValue device = spnlib_SDL_AudioDevice_new(name, &want);
 
 	// fill device properties
 	spn_hashmap_set_strkey(hm, "device", &device);
@@ -301,17 +304,16 @@ static int spnlib_SDL_Audio_resume(SpnValue *ret, int argc, SpnValue *argv, void
 	return 0;
 }
 
-//
-// Audio methods hashmap creation
-//
-
-void spnlib_SDL_methods_for_Audio(SpnHashMap *audio)
+/////////////////////////////////
+//    Audio methods creation   //
+/////////////////////////////////
+void spnlib_SDL_methods_for_AudioDevice(SpnHashMap *audio)
 {
 	static const SpnExtFunc methods[] = {
-		{ "close",     spnlib_SDL_Audio_close     },
-		{ "getStatus", spnlib_SDL_Audio_getStatus },
-		{ "pause",     spnlib_SDL_Audio_pause     },
-		{ "resume",    spnlib_SDL_Audio_resume    }
+		{ "close",      spnlib_SDL_Audio_close      },
+		{ "getStatus",  spnlib_SDL_Audio_getStatus  },
+		{ "pause",      spnlib_SDL_Audio_pause      },
+		{ "resume",     spnlib_SDL_Audio_resume     }
 	};
 
 	for (size_t i = 0; i < sizeof methods / sizeof methods[0]; i++) {

@@ -52,7 +52,7 @@ of the following (considering the left column is a string):
 | |                   **float support (new to SDL 2.0)**                     |
 | F32     | 32-bit floating point samples in little-endian byte order        |
 | F32MSB  | 32-bit floating point samples in big-endian byte order           |
-| F32MSB  | 32-bit floating point samples in system order                    |
+| F32SYS  | 32-bit floating point samples in system order                    |
 
 *Note*: if you miswrite the format string, the program will halt to avoid further
 trouble.
