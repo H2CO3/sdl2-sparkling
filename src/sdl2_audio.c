@@ -14,14 +14,15 @@
 typedef struct spn_SDL_Audio {
 	SpnObject base;
 	SDL_AudioDeviceID ID;
-	// FIXME: If this structure won't hold any other kind of data, I might as
-	// FIXME: well swap it with a simple SpnValue holder for the ID
+	SDL_AudioSpec spec;
+	Uint8 *wav_buffer;
 } spn_SDL_Audio;
 
 
 static void spn_SDL_Audio_dtor(void *obj)
 {
 	spn_SDL_Audio *device = obj;
+	SDL_FreeWAV(device->wav_buffer);
 	SDL_CloseAudioDevice(device->ID);
 }
 
@@ -52,6 +53,15 @@ spn_SDL_Audio *audio_from_hashmap(SpnHashMap *hm)
 
 	return audio;
 }
+
+#define CHECK_FOR_AUDIO_HASHMAP()                                      \
+	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);                             \
+	SpnHashMap *hm = HASHMAPARG(0);                                    \
+	spn_SDL_Audio *device = audio_from_hashmap(hm);                     \
+	if (device == NULL) {                                               \
+		spn_ctx_runtime_error(ctx, "audio object is invalid", NULL);   \
+		return -1;                                                     \
+	}
 
 //
 // Audio Class construction materials
@@ -94,14 +104,18 @@ static SDL_AudioFormat get_audioformat_value(const char *name)
 		// 16-bit
 		{ "S16",    AUDIO_S16    },
 		{ "S16MSB", AUDIO_S16MSB },
+		{ "S16SYS", AUDIO_S16SYS },
 		{ "U16",    AUDIO_U16    },
 		{ "U16MSB", AUDIO_U16MSB },
+		{ "U16SYS", AUDIO_U16SYS },
 		// 32-bit
 		{ "S32",    AUDIO_S32    },
 		{ "S32MSB", AUDIO_S32MSB },
+		{ "S32SYS", AUDIO_S32SYS },
 		// float
 		{ "F32",    AUDIO_F32    },
-		{ "F32MSB", AUDIO_F32MSB }
+		{ "F32MSB", AUDIO_F32MSB },
+		{ "F32SYS", AUDIO_F32SYS }
 	};
 
 	for (size_t i = 0; i < sizeof formats / sizeof formats[0]; i++) {
@@ -153,9 +167,11 @@ static const char *get_channel_string(Uint8 channel)
 	SHANT_BE_REACHED();
 }
 
-static void fill_hashmap_with_obtained_audiospec(SpnHashMap *hm, SDL_AudioSpec *spec)
+static void fill_hashmap_with_obtained_audiospec(SpnHashMap *hm)
 {
 	SpnValue val;
+	spn_SDL_Audio *device = audio_from_hashmap(hm);
+	SDL_AudioSpec *spec = &device->spec;
 
 	// 1. freq : int
 	val = spn_makeint(spec->freq);
@@ -180,14 +196,10 @@ static void fill_hashmap_with_obtained_audiospec(SpnHashMap *hm, SDL_AudioSpec *
 //
 // FIXME: As soon as SDL supports recording, `iscapture` shall be considered in
 // FIXME: the argv. Until then, `iscapture` = 0
-static SpnValue spnlib_SDL_Audio_new(
-	const char *name,
-	SDL_AudioSpec *want,
-	SDL_AudioSpec *have
-)
+static SpnValue spnlib_SDL_Audio_new(const char *name, SDL_AudioSpec *want)
 {
 	spn_SDL_Audio *obj = spn_object_new(&spn_SDL_Audio_class);
-	obj->ID = SDL_OpenAudioDevice(name, 0, want, have, 0);
+	obj->ID = SDL_OpenAudioDevice(name, 0, want, &obj->spec, 0);
 	return spn_makestrguserinfo(obj);
 }
 
@@ -207,16 +219,15 @@ int spnlib_SDL_OpenAudioDevice(SpnValue *ret, int argc, SpnValue *argv, void *ct
 	spn_hashmap_set_strkey(hm, "super", &proto);
 
 	// prepare values from arguments
-	SDL_AudioSpec have;
 	SDL_AudioSpec want = get_audiospec_from_arg(ARRAYARG(0));
 	const char *name = argc == 2 ? STRARG(1) : NULL;
 
 	// create device object
-	SpnValue device = spnlib_SDL_Audio_new(name, &want, &have);
+	SpnValue device = spnlib_SDL_Audio_new(name, &want);
 
 	// fill device properties
 	spn_hashmap_set_strkey(hm, "device", &device);
-	fill_hashmap_with_obtained_audiospec(hm, &have);
+	fill_hashmap_with_obtained_audiospec(hm);
 
 	spn_value_release(&device);
 	return 0;
@@ -246,19 +257,11 @@ int spnlib_SDL_ListAudioDevices(SpnValue *ret, int argc, SpnValue *argv, void *c
 
 static int spnlib_SDL_Audio_close(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_FOR_AUDIO_HASHMAP();
 
-	SpnHashMap *hm = HASHMAPARG(0);
-	spn_SDL_Audio *audio = audio_from_hashmap(hm);
-
-	if (audio == NULL) {
-		spn_ctx_runtime_error(ctx, "audio object is invalid", NULL);
-		return -1;
-	}
-
-	if (audio->ID) {
-		SDL_CloseAudioDevice(audio->ID);
-		audio->ID = 0;
+	if (device->ID) {
+		SDL_CloseAudioDevice(device->ID);
+		device->ID = 0;
 	}
 
 	return 0;
@@ -276,17 +279,25 @@ static const char *get_audio_device_status(int device)
 
 static int spnlib_SDL_Audio_getStatus(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	CHECK_ARG_RETURN_ON_ERROR(0, hashmap);
+	CHECK_FOR_AUDIO_HASHMAP();
 
-	SpnHashMap *hm = HASHMAPARG(0);
-	spn_SDL_Audio *audio = audio_from_hashmap(hm);
+	*ret = spn_makestring_nocopy(get_audio_device_status(device->ID));
+	return 0;
+}
 
-	if (audio == NULL) {
-		spn_ctx_runtime_error(ctx, "audio object is invalid", NULL);
-		return -1;
-	}
+static int spnlib_SDL_Audio_pause(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_FOR_AUDIO_HASHMAP();
 
-	*ret = spn_makestring_nocopy(get_audio_device_status(audio->ID));
+	SDL_PauseAudioDevice(device->ID, 1);
+	return 0;
+}
+
+static int spnlib_SDL_Audio_resume(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_FOR_AUDIO_HASHMAP();
+
+	SDL_PauseAudioDevice(device->ID, 0);
 	return 0;
 }
 
@@ -298,7 +309,9 @@ void spnlib_SDL_methods_for_Audio(SpnHashMap *audio)
 {
 	static const SpnExtFunc methods[] = {
 		{ "close",     spnlib_SDL_Audio_close     },
-		{ "getStatus", spnlib_SDL_Audio_getStatus }
+		{ "getStatus", spnlib_SDL_Audio_getStatus },
+		{ "pause",     spnlib_SDL_Audio_pause     },
+		{ "resume",    spnlib_SDL_Audio_resume    }
 	};
 
 	for (size_t i = 0; i < sizeof methods / sizeof methods[0]; i++) {

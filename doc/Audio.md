@@ -14,6 +14,11 @@ Closes the selected audio device.
 
 Returns the audio device's current status.
 
+	nil pause()
+	nil resume()
+
+Self-explanatory: respectively pause and resume the audio device's playback.
+
 ## AudioSpec
 
 Creating an audio device for SDL is easier said than done.
@@ -36,14 +41,18 @@ of the following (considering the left column is a string):
 |                            **16-bit support**                              |
 | S16     | signed 16-bit samples in little-endian byte order                |
 | S16MSB  | signed 16-bit samples in big-endian byte order                   |
+| S16SYS  | signed 16-bit samples in system order                            |
 | U16     | unsigned 16-bit samples in little-endian byte order              |
 | U16MSB  | unsigned 16-bit samples in big-endian byte order                 |
+| U16SYS  | unsigned 16-bit samples in system order                          |
 |                           **32-bit support**                               |
 | S32     | 32-bit integer samples in little-endian byte order               |
 | S32MSB  | 32-bit integer samples in big-endian byte order                  |
+| S32SYS  | 32-bit integer samples in system order                           |
 |                     **float support (new to SDL 2.0)**                     |
-| FS32    | 32-bit floating point samples in little-endian byte order        |
-| FS32MSB | 32-bit floating point samples in big-endian byte order           |
+| F32     | 32-bit floating point samples in little-endian byte order        |
+| F32MSB  | 32-bit floating point samples in big-endian byte order           |
+| F32MSB  | 32-bit floating point samples in system order                    |
 
 *Note*: if you miswrite the format string, the program will halt so that no
 later problems come if an incorrect format were to be picked.
