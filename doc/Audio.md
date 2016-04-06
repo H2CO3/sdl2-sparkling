@@ -34,28 +34,28 @@ resolutions produce cleaner graphics.
 \#2 - **format** specifies the size and type of each sample element and may be one
 of the following (considering the left column is a string):
 
-|                             **8-bit support**                              |
+| |                           **8-bit support**                              |
 | ------- | ---------------------------------------------------------------- |
 | S8      | signed 8-bit samples                                             |
 | U8      | unsigned 8-bit samples                                           |
-|                            **16-bit support**                              |
+| |                          **16-bit support**                              |
 | S16     | signed 16-bit samples in little-endian byte order                |
 | S16MSB  | signed 16-bit samples in big-endian byte order                   |
 | S16SYS  | signed 16-bit samples in system order                            |
 | U16     | unsigned 16-bit samples in little-endian byte order              |
 | U16MSB  | unsigned 16-bit samples in big-endian byte order                 |
 | U16SYS  | unsigned 16-bit samples in system order                          |
-|                           **32-bit support**                               |
+| |                         **32-bit support**                               |
 | S32     | 32-bit integer samples in little-endian byte order               |
 | S32MSB  | 32-bit integer samples in big-endian byte order                  |
 | S32SYS  | 32-bit integer samples in system order                           |
-|                     **float support (new to SDL 2.0)**                     |
+| |                   **float support (new to SDL 2.0)**                     |
 | F32     | 32-bit floating point samples in little-endian byte order        |
 | F32MSB  | 32-bit floating point samples in big-endian byte order           |
 | F32MSB  | 32-bit floating point samples in system order                    |
 
-*Note*: if you miswrite the format string, the program will halt so that no
-later problems come if an incorrect format were to be picked.
+*Note*: if you miswrite the format string, the program will halt to avoid further
+trouble.
 
 \#3 - **channels** specifies the number of output channels.
 Supported values are 1 (mono), 2 (stereo), 4 (quad), and 6 (5.1).
