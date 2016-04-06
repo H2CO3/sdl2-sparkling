@@ -17,7 +17,7 @@
 #include "sdl2_event.h"
 #include "sdl2_timer.h"
 #include "sdl2_extras.h"
-#include "sdl2_audio.h"
+#include "sdl2_audio_device.h"
 
 
 /////////////////////////////////
