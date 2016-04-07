@@ -125,7 +125,7 @@ int spnlib_SDL_GetCPUSpecs(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	spn_hashmap_set_strkey(cpu_features, "ram",   &ram);
 
 	// Set Boolean properties
-	for (size_t i = 0; i < sizeof bool_specs / sizeof bool_specs[0]; i++) {
+	for (size_t i = 0; i < COUNT(bool_specs); i++) {
 		SpnValue val = SPN_SDLBOOL(bool_specs[i].fn());
 		spn_hashmap_set_strkey(cpu_features, bool_specs[i].name, &val);
 	}
@@ -139,7 +139,7 @@ int spnlib_SDL_GetCPUSpecs(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 static const char *powerstate_to_string(SDL_PowerState state)
 {
 	switch (state) {
-	case SDL_POWERSTATE_ON_BATTERY: return "not plugged in, running on the battery";
+	case SDL_POWERSTATE_ON_BATTERY: return "not plugged in, running on battery";
 	case SDL_POWERSTATE_NO_BATTERY: return "plugged in, no battery available";
 	case SDL_POWERSTATE_CHARGING:   return "plugged in, charging battery";
 	case SDL_POWERSTATE_CHARGED:    return "plugged in, battery charged";
