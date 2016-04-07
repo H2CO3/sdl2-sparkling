@@ -15,8 +15,8 @@ LDFLAGS = -L/usr/local/lib/            \
 		  -lSDL2_image
 
 ifeq ($(shell uname), Darwin)
-	CC = clang
-	CXX = clang++
+	CC = xcrun -sdk macosx clang
+	CXX = xcrun -sdk macosx clang++
 
 	LDFLAGS += -dynamiclib
 

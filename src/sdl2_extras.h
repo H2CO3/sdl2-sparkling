@@ -23,6 +23,6 @@ int spnlib_SDL_GetCPUSpecs(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
 int spnlib_SDL_GetPowerInfo(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
 
 // Set of SDL specifc macros
-#define SPN_SDLBOOL(val) makebool(val == SDL_TRUE)
+#define SPN_SDLBOOL(val) (spn_makebool((val) != SDL_FALSE))
 
 #endif
