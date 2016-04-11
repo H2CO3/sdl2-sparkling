@@ -78,6 +78,13 @@ static void set_float_property(SpnHashMap *hm, const char *name, double x)
 	spn_hashmap_set_strkey(hm, name, &val);
 }
 
+static void set_string_property(SpnHashMap *hm, const char *name, const char *str)
+{
+	SpnValue val = spn_makestring(str);
+	spn_hashmap_set_strkey(hm, name, &val);
+	spn_value_release(&val);
+}
+
 static void set_string_property_nocopy(SpnHashMap *hm, const char *name, const char *str)
 {
 	SpnValue val = spn_makestring_nocopy(str);
@@ -145,9 +152,7 @@ static SpnValue event_to_hashmap(SDL_Event *event)
 	case SDL_KEYUP: {
 		type = "keyboard";
 
-		SpnValue str = spn_makestring(SDL_GetKeyName(event->key.keysym.sym));
-		spn_hashmap_set_strkey(hm, "value", &str);
-		spn_value_release(&str);
+		set_string_property(hm, "value", SDL_GetKeyName(event->key.keysym.sym));
 
 		SpnValue mod = flags_from_modifier(event->key.keysym.mod);
 		spn_hashmap_set_strkey(hm, "modifier", &mod);
@@ -254,6 +259,12 @@ static SpnValue event_to_hashmap(SDL_Event *event)
 		set_integer_property(hm, "data2", event->window.data2);
 		break;
 	}
+	case SDL_DROPFILE:
+		type = "drop";
+		char *filename = event->drop.file;
+		set_string_property(hm, "value", filename);
+		SDL_free(filename);
+		break;
 	default:
 		break;
 	}

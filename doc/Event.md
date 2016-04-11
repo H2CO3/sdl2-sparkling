@@ -19,6 +19,12 @@ properties are also available:
       on the event name; see
       [the documentation of SDL_WindowEventID](https://wiki.libsdl.org/SDL_WindowEventID)
       for more info.
+ - if type is `drop`, then:
+ 	- `value` is the filename (including path) of the dropped file
+	- For Mac OS X, in order to enable drag&drop on an SDL app,
+	`info.plist` must *also* be edited: simply Add/Modify **Document Types**.
+	For example, to enable all document types, add the "public.data" mime
+	type as a document type.
  - if type is `keyboard`, then:
    - `value` is a string describing the key that sent the event
    - `state` is `true` if the key was pressed, `false` if it was released
