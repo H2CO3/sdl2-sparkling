@@ -84,9 +84,10 @@ If `pref` contains an empty string, either the given arguments aren't
 correct (or given at all), or the current platform does not support
 this feature.
 
-    hashmap GetVersion()
+	hashmap GetVersions()
 
-Returns a hashmap with the following keys:
+Returns a hashmap with sub-hashmaps containing version numbers of each SDL
+library, where each sub-hashmap holds the following data:
 
 * `major` : major revision (increments with massive changes, additions, and enhancements)
 * `minor` : minor revision (increments with backwards-compatible changes to the major revision)

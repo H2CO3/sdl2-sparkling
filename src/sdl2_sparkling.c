@@ -66,13 +66,13 @@ static void spn_SDL_construct_library(void)
 		{ "OpenAudioDevice",  spnlib_SDL_OpenAudioDevice  },
 		{ "ListAudioDevices", spnlib_SDL_ListAudioDevices },
 		{ "GetPaths",         spnlib_SDL_GetPaths         },
-		{ "GetVersion",       spnlib_SDL_GetVersion       },
+		{ "GetVersions",      spnlib_SDL_GetVersions      },
 		{ "GetPlatform",      spnlib_SDL_GetPlatform      },
 		{ "GetCPUSpecs",      spnlib_SDL_GetCPUSpecs      },
 		{ "GetPowerInfo",     spnlib_SDL_GetPowerInfo     }
 	};
 
-	for (size_t i = 0; i < sizeof fns / sizeof fns[0]; i++) {
+	for (size_t i = 0; i < COUNT(fns); i++) {
 		SpnValue fnval = spn_makenativefunc(fns[i].name, fns[i].fn);
 		spn_hashmap_set_strkey(library, fns[i].name, &fnval);
 		spn_value_release(&fnval);

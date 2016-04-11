@@ -59,25 +59,56 @@ int spnlib_SDL_GetPaths(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 /////////////////////////////////
 //////    SDL's version    //////
 /////////////////////////////////
-int spnlib_SDL_GetVersion(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+static void fill_sub_hashmap_version(SpnValue *lib, const SDL_version *version)
 {
-	*ret = spn_makehashmap();
-	SpnHashMap *version = spn_hashmapvalue(ret);
+	SpnHashMap *submap = spn_hashmapvalue(lib);
 
-	SDL_version linked;
-	SDL_GetVersion(&linked);
+	SpnValue major = spn_makeint(version->major);
+	SpnValue minor = spn_makeint(version->minor);
+	SpnValue patch = spn_makeint(version->patch);
 
-	SpnValue major = spn_makeint(linked.major);
-	SpnValue minor = spn_makeint(linked.minor);
-	SpnValue patch = spn_makeint(linked.patch);
-
-	spn_hashmap_set_strkey(version, "major", &major);
-	spn_hashmap_set_strkey(version, "minor", &minor);
-	spn_hashmap_set_strkey(version, "patch", &patch);
+	spn_hashmap_set_strkey(submap, "major", &major);
+	spn_hashmap_set_strkey(submap, "minor", &minor);
+	spn_hashmap_set_strkey(submap, "patch", &patch);
 
 	spn_value_release(&major);
 	spn_value_release(&minor);
 	spn_value_release(&patch);
+}
+
+static void set_sub_hashmap(
+	SpnHashMap *hm,
+	const char *key,
+	const SDL_version *version
+)
+{
+	SpnValue lib = spn_makehashmap();
+
+	fill_sub_hashmap_version(&lib, version);
+	spn_hashmap_set_strkey(hm, key, &lib);
+
+	spn_value_release(&lib);
+}
+
+int spnlib_SDL_GetVersions(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	*ret = spn_makehashmap();
+	SpnHashMap *versions = spn_hashmapvalue(ret);
+
+	// Version values
+	SDL_version v_sdl; SDL_GetVersion(&v_sdl);
+	SDL_version v_sdl_gfx = {
+		SDL2_GFXPRIMITIVES_MAJOR,
+		SDL2_GFXPRIMITIVES_MINOR,
+		SDL2_GFXPRIMITIVES_MICRO
+	};
+
+	// Setting sub-hashmaps
+	set_sub_hashmap(versions, "sdl", &v_sdl);
+	set_sub_hashmap(versions, "sdl_gfx", &v_sdl_gfx);
+	set_sub_hashmap(versions, "sdl_image", IMG_Linked_Version());
+	set_sub_hashmap(versions, "sdl_ttf", TTF_Linked_Version());
+	set_sub_hashmap(versions, "sdl_mixer", Mix_Linked_Version());
 
 	return 0;
 }

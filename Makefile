@@ -12,7 +12,8 @@ LDFLAGS = -L/usr/local/lib/            \
 		  -lspn                        \
 		  -lSDL2_gfx                   \
 		  -lSDL2_ttf                   \
-		  -lSDL2_image
+		  -lSDL2_image                 \
+		  -lSDL2_mixer
 
 ifeq ($(shell uname), Darwin)
 	CC = xcrun -sdk macosx clang
