@@ -67,11 +67,19 @@ have enough criteria to be considered classes.
 
 Returns a string of the last error occurred of anything SDL-related.
 
+	nil SetError(string fmt, ...)
+
+Sets the SDL error string to be later fetched with `SDL::GetError()`.
+
 	string GetMixError()
 
 Returns a string of the last error occurred with the mixer.
-This method is based on Mix_GetError() (not on SDL_GetError()), hence why this
+This method is based on `Mix_GetError()` (not on `SDL_GetError()`), hence why this
 specificity.
+
+	nil SetMixError(string fmt, ...)
+
+Same as `SDL::SetError()` but for SDL_Mixer.
 
     hashmap GetPaths([string organization, string app])
 
