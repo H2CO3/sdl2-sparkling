@@ -17,7 +17,7 @@
 #include "sdl2_event.h"
 #include "sdl2_timer.h"
 #include "sdl2_extras.h"
-#include "sdl2_audio_device.h"
+#include "sdl2_audio.h"
 
 
 /////////////////////////////////
@@ -35,7 +35,7 @@ SpnValue spn_get_lib_prototype(const char *classname)
 }
 
 #define SPN_LIB_CREATE_NAMESPACE(class)                    \
-	hm = spn_hashmap_new();                    \
+	hm = spn_hashmap_new();                                \
 	spnlib_SDL_methods_for_##class(hm);                    \
 	spn_hashmap_set_strkey(                                \
 		library,                                           \
@@ -59,17 +59,21 @@ static void spn_SDL_construct_library(void)
 
 	// top-level library functions
 	static const SpnExtFunc fns[] = {
-		{ "OpenWindow",       spnlib_SDL_OpenWindow       },
-		{ "PollEvent",        spnlib_SDL_PollEvent        },
-		{ "StartTimer",       spnlib_SDL_StartTimer       },
-		{ "StopTimer",        spnlib_SDL_StopTimer        },
-		{ "OpenAudioDevice",  spnlib_SDL_OpenAudioDevice  },
-		{ "ListAudioDevices", spnlib_SDL_ListAudioDevices },
-		{ "GetPaths",         spnlib_SDL_GetPaths         },
-		{ "GetVersions",      spnlib_SDL_GetVersions      },
-		{ "GetPlatform",      spnlib_SDL_GetPlatform      },
-		{ "GetCPUSpecs",      spnlib_SDL_GetCPUSpecs      },
-		{ "GetPowerInfo",     spnlib_SDL_GetPowerInfo     }
+		{ "OpenWindow",   spnlib_SDL_OpenWindow   },
+		{ "PollEvent",    spnlib_SDL_PollEvent    },
+		{ "StartTimer",   spnlib_SDL_StartTimer   },
+		{ "StopTimer",    spnlib_SDL_StopTimer    },
+		{ "OpenMusic",    spnlib_SDL_OpenMusic    },
+		{ "GetError",     spnlib_SDL_GetError     },
+		{ "SetError",     spnlib_SDL_SetError     },
+		{ "GetMixError",  spnlib_SDL_GetMixError  },
+		{ "SetMixError",  spnlib_SDL_SetMixError  },
+		{ "GetPaths",     spnlib_SDL_GetPaths     },
+		{ "GetVersions",  spnlib_SDL_GetVersions  },
+		{ "GetPlatform",  spnlib_SDL_GetPlatform  },
+		{ "GetCPUSpecs",  spnlib_SDL_GetCPUSpecs  },
+		{ "GetPowerInfo", spnlib_SDL_GetPowerInfo },
+		{ "Delay",        spnlib_SDL_Delay        }
 	};
 
 	for (size_t i = 0; i < COUNT(fns); i++) {
@@ -80,7 +84,7 @@ static void spn_SDL_construct_library(void)
 
 	SpnHashMap *hm;
 	SPN_LIB_CREATE_NAMESPACE(Window);
-	SPN_LIB_CREATE_NAMESPACE(AudioDevice);
+	SPN_LIB_CREATE_NAMESPACE(Music);
 }
 
 // when the last reference is gone to our library, we free the resources
@@ -95,6 +99,7 @@ static void spn_SDL_destroy_library(void)
 // Library constructor and destructor
 SPN_LIB_OPEN_FUNC(ctx) {
 	if (init_refcount == 0) {
+		// initialize SDL with all submodules
 		if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 			fprintf(stderr, "can't initialize SDL: %s\n", SDL_GetError());
 			return spn_nilval;

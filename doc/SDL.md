@@ -48,26 +48,30 @@ variable or a data structure.)
 Stops the timer associated with `timer`. `timer` must be a timer
 descriptor object returned by `StartTimer()`.
 
-## AudioDevice class
+## Audio class
 
-	AudioDevice OpenAudioDevice(array spec [, string device_name])
+Instead of using SDL2's own sound API, SDL_mixer is more suitable for mixing
+audio tracks.
 
-Handing a carefully crafted array `spec` (which is akin to SDL's AudioSpec)
-to this function will return you an Audio Device object.  
-If you do not hand it the name of a device, SDL will request the most reasonable
-default.  
-[Check Audio.md for more info](./Audio.md#audiospec).
-
-	array ListAudioDevices()
-
-Lists all of the available device names into an array. You can pick one and
-open it with `OpenAudioDevice()`.
+Unlike the other classes, Audio is composed of different classes instead of just
+one.
+[Check Audio.md for more info](Audio.md#arguments).
 
 
 ### Extras
 
 These are additional functionalities that don't really fit anywhere and don't
 have enough criteria to be considered classes.
+
+	string GetError()
+
+Returns a string of the last error occurred of anything SDL-related.
+
+	string GetMixError()
+
+Returns a string of the last error occurred with the mixer.
+This method is based on Mix_GetError() (not on SDL_GetError()), hence why this
+specificity.
 
     hashmap GetPaths([string organization, string app])
 
@@ -84,10 +88,10 @@ If `pref` contains an empty string, either the given arguments aren't
 correct (or given at all), or the current platform does not support
 this feature.
 
-	hashmap GetVersions()
+    hashmap GetVersions()
 
-Returns a hashmap with sub-hashmaps containing version numbers of each SDL
-library, where each sub-hashmap holds the following data:
+Returns a hashmap with sub-hashmaps containing version numbers of each bound library
+available in SDL2-Sparkling, where each sub-hashmap holds the following data:
 
 * `major` : major revision (increments with massive changes, additions, and enhancements)
 * `minor` : minor revision (increments with backwards-compatible changes to the major revision)

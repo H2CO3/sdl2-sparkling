@@ -1,0 +1,6 @@
+// Loading library
+let SDL = dynld("sdl2");
+
+// Setting and printing our own error
+SDL::SetError("Nuh-uh! I am #%d, you %s", 1, "silly-willy");
+print(SDL::GetError());

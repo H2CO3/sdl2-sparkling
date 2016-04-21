@@ -1,0 +1,98 @@
+// Loading library
+let SDL = dynld("sdl2");
+
+// Opening window
+let window = SDL::OpenWindow("Load Music", 480, 300);
+
+// Opening music
+let music = SDL::OpenMusic(44100, "S16", 2, 2048);
+
+// States
+let states = {
+	play : true,
+	quit : false
+};
+
+// cleans up screen
+fn clean_screen(window) {
+	window.setColor(0, 0, 0, 1);
+	window.clear();
+}
+// constrains string to window size
+fn constrain_str(str) {
+	if str.length > 24 { // Specific value for this window size
+		str = str.substrto(24);
+		str ..= "...";
+	}
+	return str;
+}
+
+// Preparing text
+fn render_text(window, str, posy) {
+	// writing text to buffer
+	window.setColor(1, 1, 1, 1);
+	str = constrain_str(str);
+	let size = window.textSize(str);
+	let texture = window.renderText(str, false);
+	let pos = {
+		x : (window["width"] - size["width"]) >> 1,
+		y : posy * window["height"] - size["height"]
+	};
+	window.renderTexture(texture, pos["x"], pos["y"]);
+	texture = nil;
+}
+fn basename(str) {
+	let name = str.split("/");
+	return name[name.length - 1];
+}
+
+
+// event.type control
+let ctrl_event = {
+	"quit" : fn { states["quit"] = true; },
+	"keyboard" : fn (event) {
+		if event.state {
+			if ["Keypad Space", "Space"].find(event.value) != nil {
+				if states["play"] {
+					music.pause();
+				} else {
+					music.resume();
+				}
+				states["play"] = !states["play"];
+			}
+		}
+	},
+	"drop" : fn (event, window) {
+		music.load(event.value);
+
+		let file = basename(event.value);
+		clean_screen(window);
+		render_text(window, "Now playing:", 0.2);
+		render_text(window, file, 0.5);
+		window.refresh();
+
+		music.play(-1);
+	}
+};
+
+// Preparing initial screen
+clean_screen(window);
+window.setFont("/Library/Fonts/Arial", 36, "normal");
+render_text(window, "Drop an music file!", 0.2);
+window.refresh();
+
+// Loop
+while (!states["quit"]) {
+    /*  ----------------------------------------------------------------------
+            Events handling
+        The PollEvent loop. Also extends to timed callbacks.
+    *///----------------------------------------------------------------------
+    let event;
+    while (event = SDL::PollEvent()) != nil {
+		let run_event = ctrl_event[event.type];
+
+		if run_event != nil { run_event(event, window); }
+    }
+
+	SDL::Delay(5); // Ease the CPU load
+}

@@ -46,18 +46,17 @@ static inline void spnlib_sdl2_argtype_mismatch(
 SpnValue spn_get_lib_prototype(const char *classname);
 
 // Macros for checking for certain types of arguments
-#define CHECK_ARG_RETURN_ON_ERROR(index, t)								\
-	do {																\
-		int index_s = index;											\
-		if (index_s >= argc) {											\
-			spnlib_sdl2_argindex_oob(index_s, argc, ctx);				\
-			return -1;													\
-		}																\
-																		\
-		if (!spn_is##t(&argv[index])) {									\
-			spnlib_sdl2_argtype_mismatch(index_s, #t, argv, ctx);		\
-			return -1;													\
-		}																\
+#define CHECK_ARG_RETURN_ON_ERROR(index, t)                         \
+	do {                                                            \
+		int index_s = index;                                        \
+		if (index_s >= argc) {                                      \
+			spnlib_sdl2_argindex_oob(index_s, argc, ctx);           \
+			return -1;                                              \
+		}                                                           \
+		if (!spn_is##t(&argv[index])) {                             \
+			spnlib_sdl2_argtype_mismatch(index_s, #t, argv, ctx);   \
+			return -1;                                              \
+		}                                                           \
 	} while (0)
 
 #define BOOLARG(index) spn_boolvalue(&argv[index])

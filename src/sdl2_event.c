@@ -12,11 +12,13 @@
 // Helpers for 'event_to_hashmap()'
 //
 
-#include <SDL2/SDL.h>
-#include <spn/str.h>
-
 #include "sdl2_event.h"
+#include "helpers.h"
 
+
+//
+// Helpers for 'event_to_hashmap()'
+//
 
 static SpnValue flags_from_modifier(SDL_Keymod mod)
 {
@@ -64,32 +66,6 @@ static const char *get_mouse_button_name(Uint8 button)
 	case SDL_BUTTON_X2:     return "X2";
 	default:                return NULL;
 	}
-}
-
-static void set_integer_property(SpnHashMap *hm, const char *name, long n)
-{
-	SpnValue val = spn_makeint(n);
-	spn_hashmap_set_strkey(hm, name, &val);
-}
-
-static void set_float_property(SpnHashMap *hm, const char *name, double x)
-{
-	SpnValue val = spn_makefloat(x);
-	spn_hashmap_set_strkey(hm, name, &val);
-}
-
-static void set_string_property(SpnHashMap *hm, const char *name, const char *str)
-{
-	SpnValue val = spn_makestring(str);
-	spn_hashmap_set_strkey(hm, name, &val);
-	spn_value_release(&val);
-}
-
-static void set_string_property_nocopy(SpnHashMap *hm, const char *name, const char *str)
-{
-	SpnValue val = spn_makestring_nocopy(str);
-	spn_hashmap_set_strkey(hm, name, &val);
-	spn_value_release(&val);
 }
 
 static SpnValue flags_from_mouse_button(Uint32 mask)

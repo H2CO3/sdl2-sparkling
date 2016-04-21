@@ -13,6 +13,60 @@
 
 
 /////////////////////////////////
+/////     Error Systems     /////
+/////////////////////////////////
+
+int set_sdl_error(
+	int argc,
+	SpnValue *argv,
+	SpnContext *ctx,
+	int (*Setter)(const char *fmt, ...)
+)
+{
+	char *errmsg;
+	SpnString *fmt = spn_stringvalue(&argv[0]);
+	SpnString *res = spn_string_format_obj(fmt, argc - 1, &argv[1], &errmsg);
+
+	if (res != NULL) {
+		// next line seems convoluted but it shuts a warning
+		Setter("%s", res->cstr);
+		spn_object_release(res);
+	} else {
+		const void *args[1];
+		args[0] = errmsg;
+		spn_ctx_runtime_error(ctx, "error in format string: %s", args);
+		free(errmsg);
+		return -3;
+	}
+
+	return 0;
+}
+
+int spnlib_SDL_GetError(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	*ret = spn_makestring_nocopy(SDL_GetError());
+	return 0;
+}
+
+int spnlib_SDL_SetError(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, string);
+	return set_sdl_error(argc, argv, ctx, SDL_SetError);
+}
+
+int spnlib_SDL_GetMixError(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	*ret = spn_makestring_nocopy(Mix_GetError());
+	return 0;
+}
+
+int spnlib_SDL_SetMixError(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, string);
+	return set_sdl_error(argc, argv, ctx, Mix_SetError);
+}
+
+/////////////////////////////////
 //////   Just some paths   //////
 /////////////////////////////////
 static char *get_pref_path(const char *org, const char *app)
@@ -199,5 +253,15 @@ int spnlib_SDL_GetPowerInfo(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	spn_value_release(&seconds);
 	spn_value_release(&percentage);
 
+	return 0;
+}
+
+/////////////////////////////////
+////         Delay          /////
+/////////////////////////////////
+int spnlib_SDL_Delay(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(0, int);
+	SDL_Delay(INTARG(0));
 	return 0;
 }

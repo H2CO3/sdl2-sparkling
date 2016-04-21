@@ -14,6 +14,8 @@
 #include <spn/ctx.h>
 #include <spn/api.h>
 
+#include <SDL2/SDL.h>
+
 SPN_API int spnlib_SDL_PollEvent(SpnValue *ret, int argc, SpnValue *argv, void *ctx);
 
 #endif // SPNLIB_SDL2_EVENT_H
