@@ -11,6 +11,7 @@
 #include "sdl2_audio.h"
 #include "helpers.h"
 
+
 /////////////////////////////////
 //    Audio Class materials    //
 /////////////////////////////////
@@ -91,7 +92,18 @@ const char *get_channel_string(Uint8 channel)
 	SHANT_BE_REACHED();
 }
 
-void fill_hashmap_with_values(SpnHashMap *hm, int sample)
+const char *fade_to_string(Mix_Fading fade)
+{
+	switch (fade) {
+    case MIX_FADING_OUT: return "in";
+    case MIX_FADING_IN:  return "out";
+	case MIX_NO_FADING:; // FALLTHRU
+	}
+
+	SHANT_BE_REACHED();
+}
+
+void fill_audio_hashmap_with_values(SpnHashMap *hm, int sample)
 {
 	int freq, channels;
 	SDL_AudioFormat fmt;

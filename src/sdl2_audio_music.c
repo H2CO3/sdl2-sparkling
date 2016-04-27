@@ -9,26 +9,21 @@
 //
 
 #include "sdl2_audio.h"
+#include "sdl2_audio_structs.h"
 #include "sdl2_sparkling.h"
 #include "helpers.h"
 
 
 /////////////////////////////////
-//  SDL Music class structure  //
+//    Music Class structure    //
 /////////////////////////////////
-typedef struct spn_SDL_Music {
-	SpnObject base;
-	Mix_Music *music;
-} spn_SDL_Music;
-
 static void spn_SDL_Music_dtor(void *obj)
 {
-	spn_SDL_Music *mixer = obj;
-	Mix_FreeMusic(mixer->music); mixer->music = NULL;
+	spn_SDL_Music *Music = obj;
+	Mix_FreeMusic(Music->music); Music->music = NULL;
 	Mix_CloseAudio();
 }
 
-// A simple RAII class for managing SDL_Audio objects
 const SpnClass spn_SDL_Music_class = {
 	sizeof(spn_SDL_Music),
 	SPN_SDL_CLASS_UID_AUDIO,
@@ -38,23 +33,23 @@ const SpnClass spn_SDL_Music_class = {
 	spn_SDL_Music_dtor
 };
 
-// Retrieves an internal audio descriptor from a "public" audio object
-static spn_SDL_Music *audio_from_hashmap(SpnHashMap *hm)
+spn_SDL_Music *from_hashmap_grab_Music(SpnHashMap *hm)
 {
-	SpnValue objv = spn_hashmap_get_strkey(hm, "mixer");
+	SpnValue objv = spn_hashmap_get_strkey(hm, "music");
 
 	if (!spn_isstrguserinfo(&objv)) {
 		return NULL;
 	}
 
-	spn_SDL_Music *mixer = spn_objvalue(&objv);
+	spn_SDL_Music *music = spn_objvalue(&objv);
 
-	if (!spn_object_member_of_class(mixer, &spn_SDL_Music_class)) {
+	if (!spn_object_member_of_class(music, &spn_SDL_Music_class)) {
 		return NULL;
 	}
 
-	return mixer;
+	return music;
 }
+
 
 /////////////////////////////////
 //    Initialize Music Class   //
@@ -71,7 +66,7 @@ int spnlib_SDL_OpenMusic(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	CHECK_ARG_RETURN_ON_ERROR(0, int);      // freq
 	CHECK_ARG_RETURN_ON_ERROR(1, string);   // format
 	CHECK_ARG_RETURN_ON_ERROR(2, int);      // channels
-	CHECK_ARG_RETURN_ON_ERROR(3, int);      // sample
+	CHECK_ARG_RETURN_ON_ERROR(3, int);      // chunksize
 
 	*ret = spn_makehashmap();
 	SpnHashMap *hm = spn_hashmapvalue(ret);
@@ -84,10 +79,10 @@ int spnlib_SDL_OpenMusic(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	int freq =            INTARG(0);
 	SDL_AudioFormat fmt = get_audioformat_value(STRARG(1));
 	int channels =        INTARG(2);
-	int sample =          INTARG(3);
+	int chunksize =       INTARG(3);
 
 	// create mixer object
-	if (Mix_OpenAudio(freq, fmt, channels, sample) < 0) {
+	if (Mix_OpenAudio(freq, fmt, channels, chunksize) < 0) {
 		// The only time where GetError() is obligatorily called by the library
 		const void *args[1] = { Mix_GetError() };
 		spn_ctx_runtime_error(ctx, "couldn't initialize SDL_mixer", args);
@@ -95,11 +90,11 @@ int spnlib_SDL_OpenMusic(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 	}
 
 	// fill mixer properties
-	SpnValue mixer = spnlib_SDL_Music_new();
-	spn_hashmap_set_strkey(hm, "mixer", &mixer);
-	spn_value_release(&mixer);
+	SpnValue music = spnlib_SDL_Music_new();
+	spn_hashmap_set_strkey(hm, "music", &music);
+	spn_value_release(&music);
 
-	fill_hashmap_with_values(hm, sample);
+	fill_audio_hashmap_with_values(hm, chunksize);
 
 	return 0;
 }
@@ -124,17 +119,6 @@ static const char *music_type_to_string(Mix_MusicType type)
 	SHANT_BE_REACHED();
 }
 
-static const char *fade_to_string(Mix_Fading fade)
-{
-	switch (fade) {
-    case MIX_FADING_OUT: return "in";
-    case MIX_FADING_IN:  return "out";
-	case MIX_NO_FADING:; // FALLTHRU
-	}
-
-	SHANT_BE_REACHED();
-}
-
 // methods
 static int spnlib_SDL_Music_listDecoders(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
@@ -147,45 +131,45 @@ static int spnlib_SDL_Music_listDecoders(SpnValue *ret, int argc, SpnValue *argv
 
 static int spnlib_SDL_Music_load(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	CHECK_FOR_AUDIO_HASHMAP(Music);
+	CHECK_FOR_AUDIO_HASHMAP(0, Music);
 	CHECK_ARG_RETURN_ON_ERROR(1, string); // filename
 
-	mixer->music = Mix_LoadMUS(STRARG(1));
-	*ret = mixer->music ? spn_trueval : spn_falseval;
+	Music->music = Mix_LoadMUS(STRARG(1));
+	*ret = Music->music ? spn_trueval : spn_falseval;
 
 	return 0;
 }
 
 static int spnlib_SDL_Music_getType(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	CHECK_FOR_AUDIO_HASHMAP(Music);
-	const char *type = music_type_to_string(Mix_GetMusicType(mixer->music));
+	CHECK_FOR_AUDIO_HASHMAP(0, Music);
+	const char *type = music_type_to_string(Mix_GetMusicType(Music->music));
 	*ret = spn_makestring_nocopy(type);
 	return 0;
 }
 
 static int spnlib_SDL_Music_play(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	CHECK_FOR_AUDIO_HASHMAP(Music);
+	CHECK_FOR_AUDIO_HASHMAP(0, Music);
 	CHECK_ARG_RETURN_ON_ERROR(1, int);
 
-	Mix_PlayMusic(mixer->music, INTARG(1));
+	Mix_PlayMusic(Music->music, INTARG(1));
 	return 0;
 }
 
 static int spnlib_SDL_Music_fadeIn(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	CHECK_FOR_AUDIO_HASHMAP(Music);
+	CHECK_FOR_AUDIO_HASHMAP(0, Music);
 	CHECK_ARG_RETURN_ON_ERROR(1, int);
 	CHECK_ARG_RETURN_ON_ERROR(2, int);
-	if (argc == 4) {
+	if (argc >= 4) {
 		CHECK_ARG_RETURN_ON_ERROR(3, int);
 	}
 
 	if (argc < 4) {
-		Mix_FadeInMusic(mixer->music, INTARG(1), INTARG(2));
+		Mix_FadeInMusic(Music->music, INTARG(1), INTARG(2));
 	} else {
-		Mix_FadeInMusicPos(mixer->music, INTARG(1), INTARG(2), INTARG(3));
+		Mix_FadeInMusicPos(Music->music, INTARG(1), INTARG(2), INTARG(3));
 	}
 	return 0;
 }
@@ -199,12 +183,12 @@ static int spnlib_SDL_Music_fadeOut(SpnValue *ret, int argc, SpnValue *argv, voi
 
 static int spnlib_SDL_Music_volume(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
-	double vol = -1;
-	if (argc == 1) {
+	Sint8 vol = -1;
+	if (argc >= 2) {
 		CHECK_ARG_RETURN_ON_ERROR(1, number);
 		vol = constrain_to_01(NUMARG(1)) * 128;
 	}
-	*ret = spn_makefloat(Mix_VolumeMusic(vol) / 128); // bit shifting wouldn't do
+	*ret = spn_makefloat(Mix_VolumeMusic(vol) / 128.0); // bit shifting wouldn't do
 
 	return 0;
 }
