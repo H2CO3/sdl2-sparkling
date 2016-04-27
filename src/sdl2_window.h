@@ -12,6 +12,7 @@
 #define SPNLIB_SDL2_WINDOW_H
 
 #include <spn/ctx.h>
+#include <spn/private.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>

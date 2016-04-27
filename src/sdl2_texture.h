@@ -1,5 +1,5 @@
 //
-// sdl2_texture.h
+// texture.h
 // sdl2-sparkling
 //
 // Created by Arpad Goretity
@@ -8,8 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-#ifndef SPNLIB_SDL2_TEXTURE_H
-#define SPNLIB_SDL2_TEXTURE_H
+#ifndef SPNLIB_SDL_TEXTURE_H
+#define SPNLIB_SDL_TEXTURE_H
 
 #include <SDL2/SDL.h>
 #include <spn/api.h>
@@ -30,4 +30,4 @@ SPN_API spn_SDL_Texture *spnlib_SDL_texture_new_surface(
 	SDL_Surface *surface
 );
 
-#endif // SPNLIB_SDL2_TEXTURE_H
+#endif // SPNLIB_SDL_TEXTURE_H

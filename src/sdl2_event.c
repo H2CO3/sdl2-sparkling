@@ -8,13 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-//
-// Helpers for 'event_to_hashmap()'
-//
-
 #include "sdl2_event.h"
 #include "helpers.h"
-
 
 //
 // Helpers for 'event_to_hashmap()'

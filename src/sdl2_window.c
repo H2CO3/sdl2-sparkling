@@ -10,6 +10,7 @@
 
 #include "sdl2_window.h"
 #include "sdl2_sparkling.h"
+#include "helpers.h"
 #include "sdl2_ttf.h"
 #include "sdl2_event.h"
 #include "sdl2_timer.h"
@@ -171,12 +172,6 @@ static int spnlib_SDL_Window_clear(SpnValue *ret, int argc, SpnValue *argv, void
 	return 0;
 }
 
-// Constrain a floating-point value to the [0...1] closed interval.
-static double constrain_to_01(double x)
-{
-	return x < 1 ? x < 0 ? 0 : x : 1;
-}
-
 // Returns the SDL_BlendMode corresponding to the given string
 // (Failsafe) Returns NONE if it doesn't correspond to any
 static SDL_BlendMode get_blend_mode_value(const char *name)
@@ -191,7 +186,7 @@ static SDL_BlendMode get_blend_mode_value(const char *name)
 		{ "none",  SDL_BLENDMODE_NONE  }
 	};
 
-	for (size_t i = 0; i < sizeof modes / sizeof modes[0]; i++) {
+	for (size_t i = 0; i < COUNT(modes); i++) {
 		if (strcmp(modes[i].name, name) == 0) {
 			return modes[i].mode;
 		}
@@ -452,7 +447,7 @@ static int spnlib_SDL_Window_drawArc(
 	SDL_GetRenderDrawColor(renderer, &R, &G, &B, &A);
 
 	// This is necessary because if e. g. start = 0 and end = 2 PI,
-	// then sdl2_gfx won't draw *anything* at all.
+	// then gfx won't draw *anything* at all.
 	int is_full_circle = abs(end - start) >= 2 * M_PI;
 
 	if (fill) {
@@ -555,7 +550,7 @@ static int spnlib_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv
 	SpnArray *coords = ARRAYARG(1);
 
 	size_t ncoords = spn_array_count(coords);
-	size_t npoints = ncoords / 2;
+	size_t npoints = ncoords >> 1;
 
 	if (ncoords % 2 != 0) {
 		spn_ctx_runtime_error(ctx, "you must supply pairs of coordinates", NULL);
@@ -579,8 +574,8 @@ static int spnlib_SDL_Window_fillPolygon(SpnValue *ret, int argc, SpnValue *argv
 			return -4;
 		}
 
-		vx[i / 2] = spn_intvalue_f(&x);
-		vy[i / 2] = spn_intvalue_f(&y);
+		vx[i >> 1] = spn_intvalue_f(&x);
+		vy[i >> 1] = spn_intvalue_f(&y);
 	}
 
 	Uint8 R, G, B, A;
@@ -675,7 +670,7 @@ static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, voi
 	}
 
 	size_t ncoords = spn_array_count(coords);
-	size_t npoints = ncoords / 2;
+	size_t npoints = ncoords >> 1; // divide by 2
 
 	if (ncoords % 2 != 0) {
 		spn_ctx_runtime_error(ctx, "you must supply pairs of coordinates", NULL);
@@ -699,8 +694,8 @@ static int spnlib_SDL_Window_bezier(SpnValue *ret, int argc, SpnValue *argv, voi
 			return -5;
 		}
 
-		vx[i / 2] = spn_intvalue_f(&x);
-		vy[i / 2] = spn_intvalue_f(&y);
+		vx[i >> 1] = spn_intvalue_f(&x);
+		vy[i >> 1] = spn_intvalue_f(&y);
 	}
 
 	Uint8 R, G, B, A;
@@ -1078,7 +1073,7 @@ static Uint32 get_messagebox_button_flag(const char *str) {
 		{ "escape", SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT }
 	};
 
-	for (size_t i = 0; i < sizeof flags / sizeof flags[0]; i++) {
+	for (size_t i = 0; i < COUNT(flags); i++) {
 		if (strcmp(flags[i].name, str) == 0) {
 			return flags[i].flag;
 		}
@@ -1202,7 +1197,7 @@ void spnlib_SDL_methods_for_Window(SpnHashMap *window)
 		{ "showMessageBox",    spnlib_SDL_Window_ShowMessageBox    }
 	};
 
-	for (size_t i = 0; i < sizeof methods / sizeof methods[0]; i++) {
+	for (size_t i = 0; i < COUNT(methods); i++) {
 		SpnValue fnval = spn_makenativefunc(methods[i].name, methods[i].fn);
 		spn_hashmap_set_strkey(window, methods[i].name, &fnval);
 		spn_value_release(&fnval);

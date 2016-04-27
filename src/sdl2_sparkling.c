@@ -64,6 +64,8 @@ static void spn_SDL_construct_library(void)
 		{ "StartTimer",   spnlib_SDL_StartTimer   },
 		{ "StopTimer",    spnlib_SDL_StopTimer    },
 		{ "OpenMusic",    spnlib_SDL_OpenMusic    },
+		{ "OpenSample",   spnlib_SDL_OpenSample   },
+		{ "OpenChannels", spnlib_SDL_OpenChannels },
 		{ "GetError",     spnlib_SDL_GetError     },
 		{ "SetError",     spnlib_SDL_SetError     },
 		{ "GetMixError",  spnlib_SDL_GetMixError  },
@@ -85,6 +87,8 @@ static void spn_SDL_construct_library(void)
 	SpnHashMap *hm;
 	SPN_LIB_CREATE_NAMESPACE(Window);
 	SPN_LIB_CREATE_NAMESPACE(Music);
+	SPN_LIB_CREATE_NAMESPACE(Sample);
+	SPN_LIB_CREATE_NAMESPACE(Channels);
 }
 
 // when the last reference is gone to our library, we free the resources
