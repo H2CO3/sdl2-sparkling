@@ -1,0 +1,53 @@
+// Loading library
+let SDL = dynld("sdl2");
+
+// States
+let states = {
+	quit : false
+};
+
+// Opening music
+let music = SDL::OpenMusic(44100, "S16", 2, 2048);
+
+// Creating custom player
+let myMusicPlayer = fn (udata, stream, len) {
+    let i, pos = udata;
+
+    // fill buffer with. music
+    for i = 0; i < len; i++ {
+		stream[i] = (i+pos) & 0xff;
+	}
+
+    // set udata for next time
+	udata = pos + len;
+};
+let test = fn (udata, stream, len) {
+	print("It works!");
+	/* XXX: uncomment
+	print("udata = ", udata);
+	*/
+};
+
+// Loading file
+if !music.load("music.mp3") {
+	print(SDL::GetMixError());
+	states["quit"] = true;
+} else {
+	let music_pos = 0;
+	/* XXX: uncomment
+	music.hook(myMusicPlayer, music_pos);
+	*/
+	music.hook(test, music_pos);
+}
+
+// looping
+while (!states["quit"]) {
+	let event;
+	while (event = SDL::PollEvent()) != nil {
+		if event.type == "quit" {
+			states["quit"] = true;
+		}
+	}
+
+	SDL::Delay(5); // Ease the CPU load
+}
