@@ -119,6 +119,36 @@ static const char *music_type_to_string(Mix_MusicType type)
 	SHANT_BE_REACHED();
 }
 
+CallbackData CB_data;
+
+static void c_callback(void *udata, Uint8 *stream, int len)
+{
+	CallbackData *c_data = &CB_data;
+/* XXX: Uncomment this part
+	#define CB_NUMARGS 3
+	SpnValue *spn_udata = udata;
+	SpnValue spn_stream = spn_makearray();
+
+	SpnValue argv[CB_NUMARGS] = {
+		spn_udata,
+		spn_stream,
+		spn_makeint(len)
+	};
+*/
+	// FIXME: I need to somehow report the error through SpnContext
+	// TODO: use CB_NUMARGS and argv
+	if (spn_ctx_callfunc(c_data->ctx, c_data->fn, NULL, 0, NULL) != 0) {
+		spn_ctx_runtime_error(c_data->ctx, "fatal error with callback function", NULL);
+	}
+/* XXX: Uncomment this part
+	// Cleaning argv
+	for (int i = 0; i < CB_NUMARGS; i++) { // spn_udata must *not* be freed
+		spn_value_release(&argv[i]);
+	}
+	#undef CB_NUMARGS
+*/
+}
+
 // methods
 static int spnlib_SDL_Music_listDecoders(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
@@ -252,6 +282,23 @@ static int spnlib_SDL_Music_fromCMD(SpnValue *ret, int argc, SpnValue *argv, voi
 	return 0;
 }
 
+static int spnlib_SDL_Music_hook(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	CHECK_ARG_RETURN_ON_ERROR(1, func);
+	// TODO: check for argv[2]'s type?
+
+	CB_data.ctx = ctx;
+	CB_data.fn = FUNCARG(1);
+	Mix_HookMusic(c_callback, &argv[2]);
+	return 0;
+}
+
+static int spnlib_SDL_Music_unhook(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
+{
+	Mix_HookMusic(NULL, NULL);
+	return 0;
+}
+
 /////////////////////////////////
 //    Audio methods creation   //
 /////////////////////////////////
@@ -273,7 +320,9 @@ void spnlib_SDL_methods_for_Music(SpnHashMap *audio)
 		{ "isFading",     spnlib_SDL_Music_isFading     },
 		{ "setPosition",  spnlib_SDL_Music_setPosition  },
 		{ "halt",         spnlib_SDL_Music_halt         },
-		{ "fromCMD",      spnlib_SDL_Music_fromCMD      }
+		{ "fromCMD",      spnlib_SDL_Music_fromCMD      },
+		{ "hook",         spnlib_SDL_Music_hook         },
+		{ "unhook",       spnlib_SDL_Music_unhook       }
 	};
 
 	for (size_t i = 0; i < COUNT(methods); i++) {

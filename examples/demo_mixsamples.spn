@@ -1,0 +1,43 @@
+// Loading library
+let SDL = dynld("sdl2");
+
+// States
+let states = {
+	quit : false
+};
+
+// Opening samples
+let sample0 = SDL::OpenSample(44100, "S16", 2, 2048);
+let sample1 = SDL::OpenSample(48000, "S16", 2, 2048); // new format data won't affect anything
+
+// loading files
+sample0.load("sound1.mp3");
+sample1.load("sound2.mp3");
+
+// Opening mixer
+let mix = SDL::OpenChannels(2);
+
+// playing each sample on each channel once, then setting their volume
+mix.play(0, sample0, 0);
+mix.play(1, sample1, 0);
+mix.volume(0, 0.7);
+mix.volume(1, 0.1);
+
+// Adding callback
+let test = fn (channel) {
+	print("Finished channel #", channel);
+};
+mix.finisher(test);
+
+
+// looping
+while (!states["quit"]) {
+	let event;
+	while (event = SDL::PollEvent()) != nil {
+		if event.type == "quit" {
+			states["quit"] = true;
+		}
+	}
+
+	SDL::Delay(5); // Ease the CPU load
+}

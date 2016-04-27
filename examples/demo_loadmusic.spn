@@ -1,17 +1,17 @@
 // Loading library
 let SDL = dynld("sdl2");
 
-// Opening window
-let window = SDL::OpenWindow("Load Music", 480, 300);
-
-// Opening music
-let music = SDL::OpenMusic(44100, "S16", 2, 2048);
-
 // States
 let states = {
 	play : true,
 	quit : false
 };
+
+// Opening window
+let window = SDL::OpenWindow("Load Music", 480, 300);
+
+// Opening music
+let music = SDL::OpenMusic(44100, "S16", 2, 2048);
 
 // cleans up screen
 fn clean_screen(window) {
@@ -83,15 +83,12 @@ window.refresh();
 
 // Loop
 while (!states["quit"]) {
-    /*  ----------------------------------------------------------------------
-            Events handling
-        The PollEvent loop. Also extends to timed callbacks.
-    *///----------------------------------------------------------------------
     let event;
     while (event = SDL::PollEvent()) != nil {
 		let run_event = ctrl_event[event.type];
-
-		if run_event != nil { run_event(event, window); }
+		if run_event != nil {
+			run_event(event, window);
+		}
     }
 
 	SDL::Delay(5); // Ease the CPU load

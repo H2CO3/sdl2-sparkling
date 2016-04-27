@@ -65,7 +65,7 @@ Here's a quick example:
 	SDL::OpenMusic(44100, "S16", 2, 2048)
 
 **Be careful!** As soon as you use either `OpenMusic()` or `OpenSample()` with
-one format, every subsequent calls of these functions will *always* have this
+one format, every subsequent calls of these two functions will *always* have this
 same format, no matter what data you give it the second time.
 The only way to reset this is by giving *all* instanced variables a `nil` value.
 
@@ -255,3 +255,22 @@ player supports that. Looping music works, by calling the command again when
 the previous music player process has ended.
 
 **Note**: Commands are not totally portable, so be careful.
+
+	nil hook(function callback(any udata, array stream, integer len), any data)
+	nil unhook()
+
+Functions to set up a custom music player.
+
+The function will be called with `data` passed into the `udata` parameter
+when `callback()` is called.
+The `stream` parameter is an empty array of the audio stream
+buffer to be filled with `len` bytes of music. The music player will then be
+called automatically when the mixer needs it.
+
+Music playing will start as soon as this is called.
+
+All the music playing and stopping functions have no effect on music after this.
+Pause and resume will work. Using a custom music player and the internal
+music player is not possible as the custom one takes priority.
+
+To stop the custom music player, simply call `unhook()`.
