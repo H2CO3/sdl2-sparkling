@@ -8,8 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-#ifndef SPNLIB_SDL_AUDIO_H
-#define SPNLIB_SDL_AUDIO_H
+#ifndef SPNLIB_SDL2_AUDIO_H
+#define SPNLIB_SDL2_AUDIO_H
 
 #include <spn/api.h>
 #include <spn/ctx.h>
@@ -46,4 +46,4 @@ const char *fade_to_string(Mix_Fading fade);
 void fill_audio_hashmap_with_values(SpnHashMap *hm, int sample);
 void set_decoder_list_array(SpnArray *arr, size_t count, const char *(*GetDecoder)(int));
 
-#endif // SPNLIB_SDL_AUDIO_H
+#endif // SPNLIB_SDL2_AUDIO_H

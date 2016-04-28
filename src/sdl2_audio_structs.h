@@ -8,8 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-#ifndef SPNLIB_SDL_AUDIO_STRUCTS_H
-#define SPNLIB_SDL_AUDIO_STRUCTS_H
+#ifndef SPNLIB_SDL2_AUDIO_STRUCTS_H
+#define SPNLIB_SDL2_AUDIO_STRUCTS_H
 
 #include "sdl2_sparkling.h"
 
@@ -50,4 +50,4 @@ typedef struct {
 } CallbackData;
 
 
-#endif // SPNLIB_SDL_AUDIO_STRUCTS_H
+#endif // SPNLIB_SDL2_AUDIO_STRUCTS_H
