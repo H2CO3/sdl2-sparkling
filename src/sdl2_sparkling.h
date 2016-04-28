@@ -8,8 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-#ifndef SPNLIB_SDL_H
-#define SPNLIB_SDL_H
+#ifndef SPNLIB_SDL2_H
+#define SPNLIB_SDL2_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -81,4 +81,4 @@ enum {
 	SPN_SDL_CLASS_UID_AUDIO   = SPN_SDL_CLASS_UID_BASE + 4
 };
 
-#endif // SPNLIB_SDL_H
+#endif // SPNLIB_SDL2_H

@@ -8,8 +8,8 @@
 // Licensed under the 2-clause BSD License
 //
 
-#ifndef SPNLIB_SDL_HELPERS_H
-#define SPNLIB_SDL_HELPERS_H
+#ifndef SPNLIB_SDL2_HELPERS_H
+#define SPNLIB_SDL2_HELPERS_H
 
 #include <spn/ctx.h>
 #include <spn/api.h>
@@ -22,4 +22,4 @@ void set_float_property(SpnHashMap *hm, const char *name, double x);
 void set_string_property(SpnHashMap *hm, const char *name, const char *str);
 void set_string_property_nocopy(SpnHashMap *hm, const char *name, const char *str);
 
-#endif // SPNLIB_SDL_HELPERS_H
+#endif // SPNLIB_SDL2_HELPERS_H
