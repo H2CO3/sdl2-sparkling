@@ -176,7 +176,7 @@ Halts it in `ticks` milliseconds otherwise.
 
 Callback that is triggered when any channel is halted.
 The first and only argument from `callback()` is the channel that halted.
-**Note**: NEVER call SDL_Mixer functions, nor SDL_LockAudio, from a callback function.
+**Note**: NEVER call any functions of the Audio class from a callback function.
 
 Example:
 
@@ -263,14 +263,18 @@ Functions to set up a custom music player.
 
 The function will be called with `data` passed into the `udata` parameter
 when `callback()` is called.
+You *must* return it at the end of the function, even it remains unchanged.
+
 The `stream` parameter is an empty array of the audio stream
 buffer to be filled with `len` bytes of music. The music player will then be
 called automatically when the mixer needs it.
+*Be wary*: `stream` will be synthesized as an array of `unsigned char` (or `Uint8`).
+Damage imminent in case you ignore this.
 
-Music playing will start as soon as this is called.
+Music will start playing as soon as this is called.
 
-All the music playing and stopping functions have no effect on music after this.
-Pause and resume will work. Using a custom music player and the internal
-music player is not possible as the custom one takes priority.
+All playing and stopping functions have no effect on music after this.
+Pause and resume will work. Using both custom music player and the internal
+one isn't possible as the custom one takes priority.
 
 To stop the custom music player, simply call `unhook()`.

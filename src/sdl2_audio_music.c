@@ -20,6 +20,7 @@
 static void spn_SDL_Music_dtor(void *obj)
 {
 	spn_SDL_Music *Music = obj;
+	Mix_HookMusic(NULL, NULL);
 	Mix_FreeMusic(Music->music); Music->music = NULL;
 	Mix_CloseAudio();
 }
@@ -124,29 +125,35 @@ CallbackData CB_data;
 static void c_callback(void *udata, Uint8 *stream, int len)
 {
 	CallbackData *c_data = &CB_data;
-/* XXX: Uncomment this part
+
+	// TODO: mutex this shit
 	#define CB_NUMARGS 3
 	SpnValue *spn_udata = udata;
 	SpnValue spn_stream = spn_makearray();
 
 	SpnValue argv[CB_NUMARGS] = {
-		spn_udata,
+		*spn_udata,
 		spn_stream,
 		spn_makeint(len)
 	};
-*/
+
 	// FIXME: I need to somehow report the error through SpnContext
-	// TODO: use CB_NUMARGS and argv
-	if (spn_ctx_callfunc(c_data->ctx, c_data->fn, NULL, 0, NULL) != 0) {
+	if (spn_ctx_callfunc(c_data->ctx, c_data->fn, spn_udata, CB_NUMARGS, argv) != 0) {
 		spn_ctx_runtime_error(c_data->ctx, "fatal error with callback function", NULL);
 	}
-/* XXX: Uncomment this part
+
+	size_t count = spn_array_count(spn_arrayvalue(&spn_stream));
+	for (int i = 0; i < count && i < len; i++) {
+		SpnValue val = spn_array_get(spn_arrayvalue(&spn_stream), i);
+		stream[i] = spn_intvalue(&val) & 0xff;
+		spn_value_release(&val);
+	}
+
 	// Cleaning argv
-	for (int i = 0; i < CB_NUMARGS; i++) { // spn_udata must *not* be freed
+	for (int i = 1; i < CB_NUMARGS; i++) { // spn_udata must *not* be freed
 		spn_value_release(&argv[i]);
 	}
 	#undef CB_NUMARGS
-*/
 }
 
 // methods
@@ -285,7 +292,6 @@ static int spnlib_SDL_Music_fromCMD(SpnValue *ret, int argc, SpnValue *argv, voi
 static int spnlib_SDL_Music_hook(SpnValue *ret, int argc, SpnValue *argv, void *ctx)
 {
 	CHECK_ARG_RETURN_ON_ERROR(1, func);
-	// TODO: check for argv[2]'s type?
 
 	CB_data.ctx = ctx;
 	CB_data.fn = FUNCARG(1);
